@@ -196,4 +196,55 @@ public class Network {
             user2.addFriend(username1);
         }
     }
+
+    // 删除双向好友关系，意思就是我这边删除了你，你那边也要删除上我
+    public void removeEachOther(String username1, String username2) {
+        //判断这两个用户名字是否都存在
+        if (!userExists(username1) || !userExists(username2)) {
+            return;
+        }
+
+        //  确定这两个用户的名字不一样，如果两个用户名字一样则在控制台输出相应的信息
+        if (username1.equals(username2)) {
+            System.out.println("You cannot remove yourself as a friend.");
+            return;
+        }
+        User user1 = userNetwork.get(username1);
+        User user2 = userNetwork.get(username2);
+
+        boolean user1HasUser2 = user1.getFriends().contains(username2);
+        boolean user2HasUser1 = user2.getFriends().contains(username1);
+
+        if (!user1HasUser2 && !user2HasUser1) {
+            System.out.println("These users are not friends.");
+            return;
+        }
+
+        if (user1HasUser2) {
+            user1.removeFriend(username2);
+        }
+
+        if (user2HasUser1) {
+            user2.removeFriend(username1);
+        }
+    }
+
+    // 移除好友
+    public void removeFriend(String username) {
+        if (!userExists(username)) {
+            return;
+        }
+
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return;
+        }
+
+        if (!currentUser.getFriends().contains(username)) {
+            System.out.println("This user is not your friend.");
+            return;
+        }
+
+        currentUser.removeFriend(username);
+    }
 }
