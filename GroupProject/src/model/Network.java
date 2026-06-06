@@ -111,6 +111,38 @@ public class Network {
         return userNetwork.get(username);
     }
 
+    // 检查网络中是否已经存在该 ID 对应的 user
+    public boolean userIdExists(int userId) {
+        if (getUserById(userId) == null) {
+            System.out.println("This user ID does not exist.");
+            return false;
+        }
+
+        return true;
+    }
+
+    // 按照 ID 提取 user
+    public User getUserById(int userId) {
+        for (User user : userNetwork.values()) {
+            if (user.getUserId() == userId) {
+                return user;
+            }
+        }
+
+        return null;
+    }
+
+    // 按照 ID 提取 username
+    public String getUsernameById(int userId) {
+        User user = getUserById(userId);
+        if (user == null) {
+            System.out.println("This user ID does not exist.");
+            return null;
+        }
+
+        return user.getUsername();
+    }
+
     // 用户登录
     public boolean checkLogin(String username, String password) {
         if (!checkPassword(username, password)) {
@@ -246,5 +278,10 @@ public class Network {
         }
 
         currentUser.removeFriend(username);
+    }
+
+    // 获取网络中用户的总数
+    public int getTotalUsers() {
+        return totalUsers;
     }
 }
