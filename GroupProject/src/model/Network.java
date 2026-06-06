@@ -163,4 +163,37 @@ public class Network {
 
         return null;
     }
+
+    // 添加双向好友关系，意思就是我这边添加了你，你那边也要添加上我
+    public void addEachOther(String username1, String username2, String password1, String password2) {
+        //判断这两个用户名字是否都存在
+        if (!userExists(username1) || !userExists(username2)) {
+            return;
+        }
+        // 确定这两个用户的名字不一样，如果两个用户名字一样则在控制台输出相应的信息
+        if (username1.equals(username2)) {
+            System.out.println("You cannot add yourself as a friend.");
+            return;
+        }
+        // 判断这两个用户是否已经成为了好友，如果已经成为好友那么久不能加好友，并且在控制台输出相应的信息
+        // 这里我们需要通过名字从哈希表中提取user对象并调用isFriend（）方法比较二者是否已经加上好友
+        User user1 = userNetwork.get(username1);
+        User user2 = userNetwork.get(username2);
+
+        boolean user1HasUser2 = user1.getFriends().contains(username2);
+        boolean user2HasUser1 = user2.getFriends().contains(username1);
+
+        if (user1HasUser2 && user2HasUser1) {
+            System.out.println("You are already friends.");
+            return;
+        }
+
+        if (!user1HasUser2) {
+            user1.addFriend(username2);
+        }
+
+        if (!user2HasUser1) {
+            user2.addFriend(username1);
+        }
+    }
 }
