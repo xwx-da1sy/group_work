@@ -1,5 +1,6 @@
 package model;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 
@@ -284,6 +285,11 @@ public class Network {
     // 获取网络中用户的总数
     public int getTotalUsers() {
         return totalUsers;
+    }
+
+    // 获取网络中所有用户
+    public Collection<User> getAllUsers() {
+        return new HashSet<>(userNetwork.values());
     }
 
     // 获取任意用户的好友列表

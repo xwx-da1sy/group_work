@@ -1,0 +1,10 @@
+CURRENT_USER
+eva
+
+USERS
+eva|eva123|0|Dundee|University of Dundee
+frank|frank123|1|Glasgow|Tech Company
+
+FRIENDSHIPS
+eva|frank
+frank|eva

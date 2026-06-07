@@ -41,3 +41,23 @@ username1|username2
 
 当然后面我们也可能会考虑其他格式的文件，现在先不考虑这些了。
 
+现在我们又扩展了一下文件保存逻辑：一个社交网络对应一个txt文件，所有社交网络文件都放在data文件夹里面。比如如果保存名字叫test-social-network的社交网络，程序会自动生成：
+
+```text
+data/network-test-social-network.txt
+```
+
+这样我们就不只能保存一个固定的network-data.txt，而是可以保存多个不同的社交网络。读取的时候也是一样，通过社交网络名字找到对应文件，再把文件恢复成Network对象。
+
+目前相关方法大概是：
+
+```text
+buildNetworkFilePath(networkName)
+saveNetwork(network, networkName)
+loadNetwork(networkName)
+```
+
+我也写了一个简单的NetworkFileManagerTester进行测试。测试内容是创建一个包含eva和frank的社交网络，把它保存成network-test-social-network.txt，然后再读取回来，检查current user、用户总数和好友数量。
+
+现在还有一个后面可以优化的地方：因为好友关系在内存中是双向的，所以保存的时候会同时写出eva|frank和frank|eva。这个不是严重错误，因为读取的时候addEachOther可以保证关系不会乱，但是文件会有一点重复。后面可以考虑保存好友关系的时候只保存一边。
+

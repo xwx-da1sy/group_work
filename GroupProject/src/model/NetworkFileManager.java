@@ -1,8 +1,11 @@
 package model;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 // 这个类的作用是管理文件的读写，提供一些方法来保存和读取用户数据、好友关系等信息
 // 文本大体格式如下：
@@ -21,6 +24,9 @@ public class NetworkFileManager {
     private String filePath;
 
     // 一些保存文本的格式，保存必须去遵循的一些规则
+    private static final String DATA_FOLDER = "data";
+    private static final String NETWORK_FILE_PREFIX = "network-";
+    private static final String FILE_EXTENSION = ".txt";
     private static final String DEFAULT_FILE_PATH = "data/network-data.txt";
     private static final String CURRENT_USER_SECTION = "CURRENT_USER";
     private static final String USERS_SECTION = "USERS";
@@ -36,6 +42,37 @@ public class NetworkFileManager {
     // 使用指定文件路径创建文件管理器
     public NetworkFileManager(String filePath) {
         this.filePath = filePath;
+    }
+
+    // 获取当前文件管理器正在使用的文件路径
+    public String getFilePath() {
+        return filePath;
+    }
+
+    // 修改当前文件管理器正在使用的文件路径
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    // 根据社交网络名字生成对应的文件路径
+    public static String buildNetworkFilePath(String networkName) {
+        String safeNetworkName = networkName.trim().replace(" ", "-");
+
+        if (safeNetworkName.endsWith(FILE_EXTENSION)) {
+            safeNetworkName = safeNetworkName.substring(0, safeNetworkName.length() - FILE_EXTENSION.length());
+        }
+
+        if (!safeNetworkName.startsWith(NETWORK_FILE_PREFIX)) {
+            safeNetworkName = NETWORK_FILE_PREFIX + safeNetworkName;
+        }
+
+        return DATA_FOLDER + "/" + safeNetworkName + FILE_EXTENSION;
+    }
+
+    // 根据社交网络名字读取对应的社交网络文件
+    public Network loadNetwork(String networkName) {
+        filePath = buildNetworkFilePath(networkName);
+        return loadNetwork();
     }
 
     // 从文件中读取社交网络
@@ -121,6 +158,53 @@ public class NetworkFileManager {
 
     // 把社交网络保存到文件中
     public void saveNetwork(Network network) {
+        createParentFolder();
 
+        try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
+            // 写入当前用户部分
+            writer.println(CURRENT_USER_SECTION);
+            if (network.getCurrentUser() != null) {
+                writer.println(network.getCurrentUser().getUsername());
+            }
+
+            // 写入用户信息部分
+            writer.println();
+            writer.println(USERS_SECTION);
+            for (User user : network.getAllUsers()) {
+                writer.println(user.getUsername()
+                        + WRITE_SEPARATOR + user.getPassword()
+                        + WRITE_SEPARATOR + user.getUserId()
+                        + WRITE_SEPARATOR + user.getHomeTown()
+                        + WRITE_SEPARATOR + user.getWorkPlace());
+            }
+
+            // 写入好友关系部分
+            writer.println();
+            writer.println(FRIENDSHIPS_SECTION);
+            for (User user : network.getAllUsers()) {
+                for (String friendUsername : user.getFriends()) {
+                    writer.println(user.getUsername() + WRITE_SEPARATOR + friendUsername);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Failed to save network file.");
+        }
+
+    }
+
+    // 根据社交网络名字把社交网络保存到对应的文件中
+    public void saveNetwork(Network network, String networkName) {
+        filePath = buildNetworkFilePath(networkName);
+        saveNetwork(network);
+    }
+
+    // 如果保存路径中的文件夹不存在，就先创建文件夹
+    private void createParentFolder() {
+        File file = new File(filePath);
+        File parentFolder = file.getParentFile();
+
+        if (parentFolder != null && !parentFolder.exists()) {
+            parentFolder.mkdirs();
+        }
     }
 }
