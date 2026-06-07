@@ -1,6 +1,7 @@
 package model;
 
 import java.util.HashMap;
+import java.util.HashSet;
 
 public class Network {
 
@@ -283,5 +284,82 @@ public class Network {
     // 获取网络中用户的总数
     public int getTotalUsers() {
         return totalUsers;
+    }
+
+    // 获取任意用户的好友列表
+    public HashSet<String> getFriendsList(String username) {
+        if (!userExists(username)) {
+            return null;
+        }
+
+        return new HashSet<>(userNetwork.get(username).getFriends());
+    }
+
+    // 获取当前用户的好友列表
+    public HashSet<String> getCurrentUserFriends() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return getFriendsList(currentUser.getUsername());
+    }
+
+    // -------------------以下方法和筛选有关---------------------
+
+    // 通过工作地点筛选好友
+    public HashSet<String> filterFriendsByWorkPlace(String workPlace) {
+        HashSet<String> filteredFriends = new HashSet<>();
+
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return filteredFriends;
+        }
+
+        for (String friendUsername : currentUser.getFriends()) {
+            User friend = userNetwork.get(friendUsername);
+            if (friend != null && friend.getWorkPlace().equals(workPlace)) {
+                filteredFriends.add(friendUsername);
+            }
+        }
+        return filteredFriends;
+    }
+
+    // 通过家乡筛选好友
+    public HashSet<String> filterFriendsByHomeTown(String homeTown) {
+        HashSet<String> filteredFriends = new HashSet<>();
+
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return filteredFriends;
+        }
+
+        for (String friendUsername : currentUser.getFriends()) {
+            User friend = userNetwork.get(friendUsername);
+            if (friend != null && friend.getHomeTown().equals(homeTown)) {
+                filteredFriends.add(friendUsername);
+            }
+        }
+        return filteredFriends;
+    }
+
+    // 筛选和当前用户工作地点相同的好友
+    public HashSet<String> filterFriendsBySameWorkPlace() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return filterFriendsByWorkPlace(currentUser.getWorkPlace());
+    }
+
+    // 筛选和当前用户家乡相同的好友
+    public HashSet<String> filterFriendsBySameHomeTown() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return filterFriendsByHomeTown(currentUser.getHomeTown());
     }
 }
