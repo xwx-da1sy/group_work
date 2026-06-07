@@ -1,0 +1,13 @@
+CURRENT_USER
+alice
+
+USERS
+alice|alice123|0|Dundee|University of Dundee
+bob|bob123|1|London|Tech Company
+charlie|charlie123|2|Dundee|Tech Company
+diana|diana123|3|Manchester|University of Dundee
+
+FRIENDSHIPS
+alice|bob
+alice|charlie
+bob|diana
