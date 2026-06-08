@@ -10,6 +10,9 @@ import java.io.PrintWriter;
 // 这个类的作用是管理文件的读写，提供一些方法来保存和读取用户数据、好友关系等信息
 // 文本大体格式如下：
 //
+//      NETWORK_ID
+//      保存当前社交网络 ID
+//
 //      CURRENT_USER
 //      保存当前用户 userId
 //
@@ -27,7 +30,8 @@ public class NetworkFileManager {
     private static final String DATA_FOLDER = "data";
     private static final String NETWORK_FILE_PREFIX = "network-";
     private static final String FILE_EXTENSION = ".txt";
-    private static final String DEFAULT_FILE_PATH = "data/network-data.txt";
+    private static final String DEFAULT_FILE_PATH = "data/network-0.txt";
+    private static final String NETWORK_ID_SECTION = "NETWORK_ID";
     private static final String CURRENT_USER_SECTION = "CURRENT_USER";
     private static final String USERS_SECTION = "USERS";
     private static final String FRIENDSHIPS_SECTION = "FRIENDSHIPS";
@@ -54,24 +58,14 @@ public class NetworkFileManager {
         this.filePath = filePath;
     }
 
-    // 根据社交网络名字生成对应的文件路径
-    public static String buildNetworkFilePath(String networkName) {
-        String safeNetworkName = networkName.trim().replace(" ", "-");
-
-        if (safeNetworkName.endsWith(FILE_EXTENSION)) {
-            safeNetworkName = safeNetworkName.substring(0, safeNetworkName.length() - FILE_EXTENSION.length());
-        }
-
-        if (!safeNetworkName.startsWith(NETWORK_FILE_PREFIX)) {
-            safeNetworkName = NETWORK_FILE_PREFIX + safeNetworkName;
-        }
-
-        return DATA_FOLDER + "/" + safeNetworkName + FILE_EXTENSION;
+    // 根据社交网络 ID 生成对应的文件路径
+    public static String buildNetworkFilePath(long networkId) {
+        return DATA_FOLDER + "/" + NETWORK_FILE_PREFIX + networkId + FILE_EXTENSION;
     }
 
-    // 根据社交网络名字读取对应的社交网络文件
-    public Network loadNetwork(String networkName) {
-        filePath = buildNetworkFilePath(networkName);
+    // 根据社交网络 ID 读取对应的社交网络文件
+    public Network loadNetwork(long networkId) {
+        filePath = buildNetworkFilePath(networkId);
         return loadNetwork();
     }
 
@@ -79,6 +73,9 @@ public class NetworkFileManager {
     public Network loadNetwork() {
         // 用来保存从文件中恢复出来的整个社交网络
         Network network = new Network();
+
+        // 用来暂时保存文件中记录的社交网络 ID
+        long networkId = -1;
 
         // 用来暂时保存文件中记录的当前用户 ID
         int currentUserId = -1;
@@ -93,7 +90,15 @@ public class NetworkFileManager {
             // 读取文件中的第一行
             line = reader.readLine();
 
-            // 确认第一部分是当前用户信息
+            // 确认第一部分是社交网络 ID 信息
+            if (NETWORK_ID_SECTION.equals(line)) {
+                // 读取当前社交网络的 ID
+                networkId = Long.parseLong(reader.readLine());
+                network.setNetworkId(networkId);
+            }
+
+            // 读取下一行，确认第二部分是当前用户信息
+            line = reader.readLine();
             if (CURRENT_USER_SECTION.equals(line)) {
                 // 读取当前用户的 userId
                 currentUserId = Integer.parseInt(reader.readLine());
@@ -158,10 +163,16 @@ public class NetworkFileManager {
 
     // 把社交网络保存到文件中
     public void saveNetwork(Network network) {
+        filePath = buildNetworkFilePath(network.getNetworkId());
         createParentFolder();
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
+            // 写入社交网络 ID 部分
+            writer.println(NETWORK_ID_SECTION);
+            writer.println(network.getNetworkId());
+
             // 写入当前用户部分
+            writer.println();
             writer.println(CURRENT_USER_SECTION);
             if (network.getCurrentUser() != null) {
                 writer.println(network.getCurrentUser().getUserId());
@@ -183,7 +194,10 @@ public class NetworkFileManager {
             writer.println(FRIENDSHIPS_SECTION);
             for (User user : network.getAllUsers()) {
                 for (int friendId : user.getFriends()) {
-                    writer.println(user.getUserId() + WRITE_SEPARATOR + friendId);
+                    // 双向好友关系只保存一次，避免 0|1 和 1|0 同时出现
+                    if (user.getUserId() < friendId) {
+                        writer.println(user.getUserId() + WRITE_SEPARATOR + friendId);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -192,9 +206,10 @@ public class NetworkFileManager {
 
     }
 
-    // 根据社交网络名字把社交网络保存到对应的文件中
-    public void saveNetwork(Network network, String networkName) {
-        filePath = buildNetworkFilePath(networkName);
+    // 根据社交网络 ID 把社交网络保存到对应的文件中
+    public void saveNetwork(Network network, long networkId) {
+        network.setNetworkId(networkId);
+        filePath = buildNetworkFilePath(networkId);
         saveNetwork(network);
     }
 

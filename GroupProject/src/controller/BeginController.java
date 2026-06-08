@@ -7,5 +7,5 @@ public class BeginController {
 
     private Network network;
     private NetworkFileManager fileManager;
-    private String networkName;
+    private long networkId;
 }

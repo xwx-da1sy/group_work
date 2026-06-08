@@ -12,11 +12,12 @@ public class NetworkFileManagerTester {
         network.addEachOther("eva", "frank", null, null);
 
         NetworkFileManager fileManager = new NetworkFileManager();
-        fileManager.saveNetwork(network, "test-social-network");
+        fileManager.saveNetwork(network);
 
-        Network loadedNetwork = fileManager.loadNetwork("test-social-network");
+        Network loadedNetwork = fileManager.loadNetwork(network.getNetworkId());
 
         System.out.println("Saved file: " + fileManager.getFilePath());
+        System.out.println("Network ID: " + loadedNetwork.getNetworkId());
         System.out.println("Current user: " + loadedNetwork.getCurrentUser().getUsername());
         System.out.println("Total users: " + loadedNetwork.getTotalUsers());
         System.out.println("Eva friends: " + loadedNetwork.getFriendsList("eva").size());

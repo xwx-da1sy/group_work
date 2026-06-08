@@ -7,17 +7,25 @@ import java.util.HashSet;
 public class Network {
 
     private static final int MAX_USERS = 20;
+    private static long nextNetworkId = System.currentTimeMillis();
 
+    private long networkId;
     private int totalUsers;
     private int nextUserId;
     private HashMap<Integer, User> userNetwork;
     private User currentUser;
 
     public Network() {
+        networkId = generateNetworkId();
         userNetwork = new HashMap<>(MAX_USERS);
         totalUsers = 0;
         nextUserId = 0;
         currentUser = null;
+    }
+
+    public Network(long networkId) {
+        this();
+        setNetworkId(networkId);
     }
 
     public Network(User currentUser) {
@@ -33,6 +41,22 @@ public class Network {
     }
 
     // ----------------------以下方法和基础检查有关------------------------
+
+    // 自动生成一个新的社交网络 ID
+    private static long generateNetworkId() {
+        return nextNetworkId++;
+    }
+
+    // 获取当前社交网络的 ID
+    public long getNetworkId() {
+        return networkId;
+    }
+
+    // 设置当前社交网络的 ID
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
+        nextNetworkId = Math.max(nextNetworkId, networkId + 1);
+    }
 
     // 检查网络中是否已经存在该 ID 对应的 user
     public boolean userIdExists(int userId) {

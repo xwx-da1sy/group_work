@@ -8,7 +8,7 @@
 ### 文件读取和存储
 不是老哥啊，这个ID到底是用来干啥的啊，我的哈希表用不到，但是我的User类里面还要去写这个ID啊。我既要实现用用户名查询并且提取用户，还要使用ID去查询提取用户。What can I say?
 
-大早上，现在我重新学习了文件有关的知识，为了保证我们每次能够加载或者是保存之前的NetWork的数据，我们创建了data文件夹，并且在里面创建了一个network-data.txt的文件，这个文件用来保存整个社交网络的信息，包括当前用户、所有用户信息和好友关系。每次程序启动的时候，我们可以从这个文件里面加载整个社交网络；每次程序结束或者用户选择保存的时候，我们可以把当前社交网络重新保存到这个文件里面。
+大早上，现在我重新学习了文件有关的知识，为了保证我们每次能够加载或者是保存之前的NetWork的数据，我们创建了data文件夹。现在最终采用的文件命名规则是network-ID.txt，这个文件用来保存整个社交网络的信息，包括社交网络ID、当前用户、所有用户信息和好友关系。每次程序启动的时候，我们可以从这个文件里面加载整个社交网络；每次程序结束或者用户选择保存的时候，我们可以把当前社交网络重新保存到这个文件里面。
 
 这样做的话老师就可以去查看这个文件里面的内容，看看我们是否正确的保存了用户的信息了。使用相对路径不用访问电脑上的文件。
 
@@ -23,6 +23,9 @@ The program does not use network programming. Instead, all users are stored in o
 我在NetWorkFileManager里面规定了一个文件的格式，大体分成三个部分：
 
 ```text
+NETWORK_ID
+0
+
 CURRENT_USER
 0
 
@@ -35,7 +38,7 @@ userId1|userId2
 
 现在问题在于二者怎么相互产生关联，信息怎么传递，怎么保存怎么读取。
 
-我觉得“检查 + 读取”这个习惯还不错。比如读取文件的时候，先检查当前这一行是不是CURRENT_USER、USERS或者FRIENDSHIPS，确认现在处于哪一个部分，然后再按照这个部分对应的格式去读取下一行信息。
+我觉得“检查 + 读取”这个习惯还不错。比如读取文件的时候，先检查当前这一行是不是NETWORK_ID、CURRENT_USER、USERS或者FRIENDSHIPS，确认现在处于哪一个部分，然后再按照这个部分对应的格式去读取下一行信息。
 
 这样做的好处是逻辑比较清楚，不会把当前用户、用户资料和好友关系混在一起读。它也和我们内存里面的数据结构对应得上：USERS对应HashMap里面的User对象，FRIENDSHIPS对应User里面的HashSet好友列表。后期如果要加POSTS或者LIKES，也可以继续加新的部分，而不用推翻原来的文件格式。
 
@@ -43,23 +46,24 @@ userId1|userId2
 
 当然后面我们也可能会考虑其他格式的文件，现在先不考虑这些了。
 
-现在我们又扩展了一下文件保存逻辑：一个社交网络对应一个txt文件，所有社交网络文件都放在data文件夹里面。比如如果保存名字叫test-social-network的社交网络，程序会自动生成：
+现在我们又扩展了一下文件保存逻辑：一个社交网络对应一个txt文件，所有社交网络文件都放在data文件夹里面。现在不再使用社交网络名字作为文件名，而是使用社交网络ID。比如如果社交网络ID是0，程序会自动生成：
 
 ```text
-data/network-test-social-network.txt
+data/network-0.txt
 ```
 
-这样我们就不只能保存一个固定的network-data.txt，而是可以保存多个不同的社交网络。读取的时候也是一样，通过社交网络名字找到对应文件，再把文件恢复成Network对象。
+这样我们就不只能保存一个固定文件，而是可以保存多个不同的社交网络。读取的时候也是一样，通过社交网络ID找到对应文件，再把文件恢复成Network对象。
 
 目前相关方法大概是：
 
 ```text
-buildNetworkFilePath(networkName)
-saveNetwork(network, networkName)
-loadNetwork(networkName)
+buildNetworkFilePath(networkId)
+saveNetwork(network)
+saveNetwork(network, networkId)
+loadNetwork(networkId)
 ```
 
-我也写了一个简单的NetworkFileManagerTester进行测试。测试内容是创建一个包含eva和frank的社交网络，把它保存成network-test-social-network.txt，然后再读取回来，检查current user、用户总数和好友数量。
+我也写了一个简单的NetworkFileManagerTester进行测试。测试内容是创建一个包含eva和frank的社交网络，把它保存成network-ID.txt，然后再读取回来，检查network ID、current user、用户总数和好友数量。
 
 现在还有一个后面可以优化的地方：因为好友关系在内存中是双向的，所以保存的时候会同时写出eva|frank和frank|eva。这个不是严重错误，因为读取的时候addEachOther可以保证关系不会乱，但是文件会有一点重复。后面可以考虑保存好友关系的时候只保存一边。
 
@@ -119,6 +123,9 @@ HashSet<Integer> friends
 文件格式也跟着改成ID版本：
 
 ```text
+NETWORK_ID
+0
+
 CURRENT_USER
 0
 
@@ -137,3 +144,105 @@ FRIENDSHIPS
 当然或许我们也可以使用别的途径去登录，比如邮箱，手机号，社交账号等等，我们可以向用户类添加更多的属性来支持这些登录方式，来扩展程序的多样性。
 
 我们现在整理分类了方法，可读性变好了一点.
+
+### 文件
+
+由于我们修改了name和ID的关系，现在社交网络的唯一标识也不再是名字，而变成了ID了。每个社交网络都有一个唯一的ID，程序会自动生成这个ID，并且把它保存在NetWork对象里面。我们在保存社交网络的时候，文件名也改成了：
+
+```text
+data/network-ID.txt
+```
+
+所以我们现在需要同步去修改文件保存，文件读取，文件格式，登录的代码了。
+
+现在已经同步完成：Network对象里面有自己的networkId，保存文件的时候会自动按照networkId生成文件名，格式是：
+
+```text
+data/network-ID.txt
+```
+
+文件内容也增加了NETWORK_ID部分。用户登录仍然使用userId和password，社交网络文件读取使用networkId。
+
+### 6.8开发顺序记录
+
+今天主要不是单纯加新功能，而是把之前关于ID的理解重新理顺了一遍。大概顺序是这样的：
+
+第一步，我们先停下UI的开发，重新确认User ID的含义。之前我一直有点把username和userId混在一起用，后来才明确：username只是用户资料里面的显示名字，可以重复；userId才是系统里面真正唯一的身份标识。
+
+第二步，我们把Network里面的哈希表主键从username改成了userId：
+
+```text
+HashMap<Integer, User>
+```
+
+这个改动很关键，因为如果继续用username当key，那么两个用户重名的时候，后加入的用户可能会覆盖前面的用户，这样整个社交网络的数据就不可靠了。
+
+第三步，我们把User里面的朋友集合也从保存username改成保存userId：
+
+```text
+HashSet<Integer> friends
+```
+
+这样好友关系就不会受到重名影响。比如两个用户都叫alice，也不会影响系统判断谁和谁是朋友。
+
+第四步，我们同步修改了登录逻辑。登录现在只能使用userId和password，不能再使用username和password。这个地方之前如果不改，后面UI登录一定会出问题，因为username允许重复以后，系统不知道到底是哪一个用户要登录。
+
+第五步，我们同步修改了文件读取和保存逻辑。因为现在用户唯一标识是userId，社交网络唯一标识是networkId，所以文件名和文件内容都要跟着改：
+
+```text
+data/network-ID.txt
+```
+
+文件里面也增加了NETWORK_ID部分，用来保存这个Network对象自己的ID。这样读取文件以后，不只是用户信息能恢复，社交网络本身的编号也能恢复。
+
+第六步，我们发现了好友关系保存的一个问题。因为内存里面好友关系是双向的，所以如果直接遍历每个用户的friends，就可能同时保存：
+
+```text
+0|1
+1|0
+```
+
+这两个其实表达的是同一段好友关系，写两遍会让文件看起来很奇怪。后面我们把保存逻辑优化成只保存一边，比如只保存userId较小的那一条：
+
+```text
+0|1
+```
+
+读取的时候再调用addEachOther，把它恢复成内存中的双向关系。这样文件更干净，逻辑也更清楚。
+
+第七步，我们又回到UI上，开始学习GridBagLayout。这里主要还在理解布局管理器，不急着一次性把所有页面都写完。现在的思路是先把LoginUI做成一个能看的基本窗口，再一步一步把组件和控制器事件绑定上去。
+
+### 今天踩过的坑
+
+最开始的问题是把username当成唯一身份。这个在用户不能重名的时候看起来没问题，但是一旦允许重名，HashMap的key、登录、加好友、文件保存都会受到影响。
+
+第二个问题是文件保存没有完全跟着数据结构一起变化。内存里已经是ID逻辑了，文件也必须同步使用ID，否则程序运行时和保存后的数据会不一致。
+
+第三个问题是双向好友关系容易重复保存。内存里面需要双向，文件里面不一定需要双向重复写。文件只保存一条关系，读取的时候恢复成双向关系，会更合理。
+
+第四个问题是UI里面一开始还残留了Network Name的想法。现在Network的唯一标识已经是networkId，所以登录界面也应该使用Network ID，而不是Network Name。
+
+### 今天优化的地方
+
+现在User ID、Network ID、username三者的职责更加清楚了：
+
+```text
+userId = 用户唯一身份
+networkId = 社交网络文件唯一身份
+username = 用户显示名字，可以重复
+```
+
+Network的底层数据结构也更合理了：
+
+```text
+HashMap<Integer, User> userNetwork
+HashSet<Integer> friends
+```
+
+这样更符合我们这个项目强调的数据结构设计，也能更好地解释为什么选择哈希表和哈希集合。
+
+登录逻辑也变得更清楚了：用userId登录可以避免重名歧义，username只负责展示和辅助查询。
+
+文件保存也更干净了：一个Network对应一个`network-ID.txt`文件，好友关系只保存一边，读取的时候再恢复成双向关系。
+
+目前TemporaryTester已经通过了基础测试，说明这次ID逻辑修改以后，创建用户、登录、好友关系、筛选和基础读取保存没有明显崩掉。
