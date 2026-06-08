@@ -32,6 +32,8 @@ public class Network {
         currentUser = createUser(username, password, homeTown, workPlace);
     }
 
+    // ----------------------以下方法和基础检查有关------------------------
+
     // 检查网络中是否已经存在该 ID 对应的 user
     public boolean userIdExists(int userId) {
         if (!userNetwork.containsKey(userId)) {
@@ -51,6 +53,8 @@ public class Network {
 
         return true;
     }
+
+    // ----------------------以下方法和当前用户有关------------------------
 
     public void setCurrentUser(User user) {
         if (user == null || !userIdExists(user.getUserId())) {
@@ -77,6 +81,8 @@ public class Network {
     public void clearCurrentUser() {
         currentUser = null;
     }
+
+    // ----------------------以下方法和创建用户有关------------------------
 
     public void addUser(User user) {
         if (user == null) {
@@ -117,6 +123,36 @@ public class Network {
         addUser(user);
         return user;
     }
+
+
+    // ----------------------------------登录有关---------------------------------
+
+    // 用户登录
+    public boolean checkLogin(int userId, String password) {
+        if (!checkPassword(userId, password)) {
+            return false;
+        }
+
+        currentUser = userNetwork.get(userId);
+        return true;
+    }
+
+    // 判断同一个用户 ID 下面的密码是否和输入的密码相同
+    public boolean checkPassword(int userId, String password) {
+        if (!userIdExists(userId)) {
+            return false;
+        }
+
+        if (userNetwork.get(userId).getPassword().equals(password)) {
+            return true;
+        }
+
+        System.out.println("Incorrect password.");
+        return false;
+    }
+
+
+    //----------------------以下方法和获取信息有关------------------------
 
     // 按照 ID 提取 user
     public User getUserById(int userId) {
@@ -178,29 +214,47 @@ public class Network {
         return user.getUsername();
     }
 
-    // 用户登录
-    public boolean checkLogin(int userId, String password) {
-        if (!checkPassword(userId, password)) {
-            return false;
-        }
-
-        currentUser = userNetwork.get(userId);
-        return true;
+    // 获取网络中用户的总数
+    public int getTotalUsers() {
+        return totalUsers;
     }
 
-    // 判断同一个用户 ID 下面的密码是否和输入的密码相同
-    public boolean checkPassword(int userId, String password) {
+    // 获取网络中所有用户
+    public Collection<User> getAllUsers() {
+        return new HashSet<>(userNetwork.values());
+    }
+
+    // 获取任意用户的好友列表
+    public HashSet<Integer> getFriendsList(int userId) {
         if (!userIdExists(userId)) {
-            return false;
+            return null;
         }
 
-        if (userNetwork.get(userId).getPassword().equals(password)) {
-            return true;
-        }
-
-        System.out.println("Incorrect password.");
-        return false;
+        return new HashSet<>(userNetwork.get(userId).getFriends());
     }
+
+    // 获取任意用户的好友列表，如果用户名重复就需要改用 ID
+    public HashSet<Integer> getFriendsList(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return null;
+        }
+
+        return getFriendsList(user.getUserId());
+    }
+
+    // 获取当前用户的好友列表
+    public HashSet<Integer> getCurrentUserFriends() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return getFriendsList(currentUser.getUserId());
+    }
+
+
+    // -------------------------以下方法和建立好友关系删除好友关系有关-------------------------
 
     // 检查当前用户是否存在该好友
     public boolean isFriend(int userId) {
@@ -369,48 +423,9 @@ public class Network {
         removeFriend(user.getUserId());
     }
 
-    // 获取网络中用户的总数
-    public int getTotalUsers() {
-        return totalUsers;
-    }
-
-    // 获取网络中所有用户
-    public Collection<User> getAllUsers() {
-        return new HashSet<>(userNetwork.values());
-    }
-
-    // 获取任意用户的好友列表
-    public HashSet<Integer> getFriendsList(int userId) {
-        if (!userIdExists(userId)) {
-            return null;
-        }
-
-        return new HashSet<>(userNetwork.get(userId).getFriends());
-    }
-
-    // 获取任意用户的好友列表，如果用户名重复就需要改用 ID
-    public HashSet<Integer> getFriendsList(String username) {
-        User user = getUser(username);
-        if (user == null) {
-            return null;
-        }
-
-        return getFriendsList(user.getUserId());
-    }
-
-    // 获取当前用户的好友列表
-    public HashSet<Integer> getCurrentUserFriends() {
-        if (currentUser == null) {
-            System.out.println("No current user.");
-            return new HashSet<>();
-        }
-
-        return getFriendsList(currentUser.getUserId());
-    }
-
     // -------------------以下方法和筛选有关---------------------
 
-    // 通过工作地点筛选好友
+    // 通过工作地点筛选用户
     public HashSet<Integer> filterFriendsByWorkPlace(String workPlace) {
         HashSet<Integer> filteredFriends = new HashSet<>();
 
@@ -464,5 +479,81 @@ public class Network {
         }
 
         return filterFriendsByHomeTown(currentUser.getHomeTown());
+    }
+
+    // 筛选朋友的朋友圈中和指定用户工作地点相同的朋友
+    public HashSet<Integer> filterFriendsOfFriendsByWorkPlace(int userId, String workPlace) {
+        HashSet<Integer> filteredFriendsOfFriends = new HashSet<>();
+
+        if (!userIdExists(userId)) {
+            return filteredFriendsOfFriends;
+        }
+
+        HashSet<Integer> directFriends = getFriendsList(userId);
+
+        for (int friendId : directFriends) {
+            HashSet<Integer> friendsOfFriend = getFriendsList(friendId);
+
+            for (int candidateId : friendsOfFriend) {
+                User candidate = getUserById(candidateId);
+
+                if (candidateId != userId
+                        && !directFriends.contains(candidateId)
+                        && candidate != null
+                        && candidate.getWorkPlace().equals(workPlace)) {
+                    filteredFriendsOfFriends.add(candidateId);
+                }
+            }
+        }
+
+        return filteredFriendsOfFriends;
+    }
+
+    // 筛选当前用户的朋友的和当前用户工作地点相同朋友
+    public HashSet<Integer> filterFriendsOfFriendsBySameWorkPlace() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return filterFriendsOfFriendsByWorkPlace(currentUser.getUserId(), currentUser.getWorkPlace());
+    }
+
+    // 筛选朋友的朋友圈中和指定用户家乡相同的朋友
+    public HashSet<Integer> filterFriendsOfFriendsByHomeTown(int userId, String homeTown) {
+        HashSet<Integer> filteredFriendsOfFriends = new HashSet<>();
+
+        if (!userIdExists(userId)) {
+            return filteredFriendsOfFriends;
+        }
+
+        HashSet<Integer> directFriends = getFriendsList(userId);
+
+        for (int friendId : directFriends) {
+            HashSet<Integer> friendsOfFriend = getFriendsList(friendId);
+
+            for (int candidateId : friendsOfFriend) {
+                User candidate = getUserById(candidateId);
+
+                if (candidateId != userId
+                        && !directFriends.contains(candidateId)
+                        && candidate != null
+                        && candidate.getHomeTown().equals(homeTown)) {
+                    filteredFriendsOfFriends.add(candidateId);
+                }
+            }
+        }
+
+        return filteredFriendsOfFriends;
+    }
+
+    // 筛选当前用户的朋友的和当前用户家乡相同朋友
+    public HashSet<Integer> filterFriendsOfFriendsBySameHomeTown() {
+        if (currentUser == null) {
+            System.out.println("No current user.");
+            return new HashSet<>();
+        }
+
+        return filterFriendsOfFriendsByHomeTown(currentUser.getUserId(), currentUser.getHomeTown());
     }
 }
