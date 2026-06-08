@@ -10,7 +10,7 @@ public class Network {
 
     private int totalUsers;
     private int nextUserId;
-    private HashMap<String, User> userNetwork;
+    private HashMap<Integer, User> userNetwork;
     private User currentUser;
 
     public Network() {
@@ -32,9 +32,19 @@ public class Network {
         currentUser = createUser(username, password, homeTown, workPlace);
     }
 
+    // 检查网络中是否已经存在该 ID 对应的 user
+    public boolean userIdExists(int userId) {
+        if (!userNetwork.containsKey(userId)) {
+            System.out.println("This user ID does not exist.");
+            return false;
+        }
+
+        return true;
+    }
+
     // 检查网络中是否已经存在该用户名对应的 user
     public boolean userExists(String username) {
-        if (!userNetwork.containsKey(username)) {
+        if (getUsersByUsername(username).isEmpty()) {
             System.out.println("This user does not exist.");
             return false;
         }
@@ -43,11 +53,20 @@ public class Network {
     }
 
     public void setCurrentUser(User user) {
-        if (user == null || !userExists(user.getUsername())) {
+        if (user == null || !userIdExists(user.getUserId())) {
             return;
         }
 
-        currentUser = userNetwork.get(user.getUsername());
+        currentUser = userNetwork.get(user.getUserId());
+    }
+
+    // 按照 ID 设置当前用户
+    public void setCurrentUserById(int userId) {
+        if (!userIdExists(userId)) {
+            return;
+        }
+
+        currentUser = userNetwork.get(userId);
     }
 
     public User getCurrentUser() {
@@ -69,14 +88,14 @@ public class Network {
             return;
         }
 
-        // 检查社交网络中是否已经有重名账号
-        if (userNetwork.containsKey(user.getUsername())) {
-            System.out.println("This user already exists.");
+        // 检查社交网络中是否已经有重复的用户 ID
+        if (userNetwork.containsKey(user.getUserId())) {
+            System.out.println("This user ID already exists.");
             return;
         }
 
-        // 把 User 对象放进哈希表中，username 是 key，User 对象是 value
-        userNetwork.put(user.getUsername(), user);
+        // 把 User 对象放进哈希表中，userId 是 key，User 对象是 value
+        userNetwork.put(user.getUserId(), user);
 
         // 更新总用户数和下一个用户 ID
         totalUsers = userNetwork.size();
@@ -94,51 +113,65 @@ public class Network {
             return null;
         }
 
-        if (userNetwork.containsKey(username)) {
-            System.out.println("This user already exists.");
-            return null;
-        }
-
         User user = new User(username, password, homeTown, workPlace, nextUserId);
         addUser(user);
         return user;
     }
 
-    // 按照名字提取 user
-    public User getUser(String username) {
-        if (!userExists(username)) {
+    // 按照 ID 提取 user
+    public User getUserById(int userId) {
+        if (!userIdExists(userId)) {
             return null;
         }
 
-        return userNetwork.get(username);
+        return userNetwork.get(userId);
     }
 
-    // 检查网络中是否已经存在该 ID 对应的 user
-    public boolean userIdExists(int userId) {
-        if (getUserById(userId) == null) {
-            System.out.println("This user ID does not exist.");
-            return false;
+    // 按照名字提取 user，如果名字重复就需要改用 ID
+    public User getUser(String username) {
+        HashSet<User> users = getUsersByUsername(username);
+
+        if (users.isEmpty()) {
+            System.out.println("This user does not exist.");
+            return null;
         }
 
-        return true;
+        if (users.size() > 1) {
+            System.out.println("More than one user has this name. Please use user ID.");
+            return null;
+        }
+
+        return users.iterator().next();
     }
 
-    // 按照 ID 提取 user
-    public User getUserById(int userId) {
+    // 按照名字提取所有同名 user
+    public HashSet<User> getUsersByUsername(String username) {
+        HashSet<User> users = new HashSet<>();
+
         for (User user : userNetwork.values()) {
-            if (user.getUserId() == userId) {
-                return user;
+            if (user.getUsername().equals(username)) {
+                users.add(user);
             }
         }
 
-        return null;
+        return users;
+    }
+
+    // 按照名字提取所有同名 user 的 ID
+    public HashSet<Integer> getUserIdsByUsername(String username) {
+        HashSet<Integer> userIds = new HashSet<>();
+
+        for (User user : getUsersByUsername(username)) {
+            userIds.add(user.getUserId());
+        }
+
+        return userIds;
     }
 
     // 按照 ID 提取 username
     public String getUsernameById(int userId) {
         User user = getUserById(userId);
         if (user == null) {
-            System.out.println("This user ID does not exist.");
             return null;
         }
 
@@ -146,22 +179,32 @@ public class Network {
     }
 
     // 用户登录
-    public boolean checkLogin(String username, String password) {
-        if (!checkPassword(username, password)) {
+    public boolean checkLogin(int userId, String password) {
+        if (!checkPassword(userId, password)) {
             return false;
         }
 
-        currentUser = userNetwork.get(username);
+        currentUser = userNetwork.get(userId);
         return true;
     }
 
-    // 判断同一个用户名下面的密码是否和输入的密码相同
-    public boolean checkPassword(String username, String password) {
-        if (!userExists(username)) {
+    // 用户登录，如果用户名重复就需要改用 ID
+    public boolean checkLogin(String username, String password) {
+        User user = getUser(username);
+        if (user == null) {
             return false;
         }
 
-        if (userNetwork.get(username).getPassword().equals(password)) {
+        return checkLogin(user.getUserId(), password);
+    }
+
+    // 判断同一个用户 ID 下面的密码是否和输入的密码相同
+    public boolean checkPassword(int userId, String password) {
+        if (!userIdExists(userId)) {
+            return false;
+        }
+
+        if (userNetwork.get(userId).getPassword().equals(password)) {
             return true;
         }
 
@@ -169,9 +212,19 @@ public class Network {
         return false;
     }
 
+    // 判断同一个用户名下面的密码是否和输入的密码相同，如果用户名重复就需要改用 ID
+    public boolean checkPassword(String username, String password) {
+        User user = getUser(username);
+        if (user == null) {
+            return false;
+        }
+
+        return checkPassword(user.getUserId(), password);
+    }
+
     // 检查当前用户是否存在该好友
-    public boolean isFriend(String username) {
-        if (!userExists(username)) {
+    public boolean isFriend(int userId) {
+        if (!userIdExists(userId)) {
             return false;
         }
 
@@ -180,8 +233,8 @@ public class Network {
             return false;
         }
 
-        // 比较 currentUser 的朋友集合中是否包含这个 username
-        if (currentUser.getFriends().contains(username)) {
+        // 比较 currentUser 的朋友集合中是否包含这个 userId
+        if (currentUser.getFriends().contains(userId)) {
             return true;
         }
 
@@ -189,33 +242,53 @@ public class Network {
         return false;
     }
 
+    // 检查当前用户是否存在该好友，如果用户名重复就需要改用 ID
+    public boolean isFriend(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return false;
+        }
+
+        return isFriend(user.getUserId());
+    }
+
     // 查看好友，如果该好友存在就直接返回这个好友对象，如果不存在就返回空
-    public User viewFriend(String username) {
-        if (isFriend(username)) {
-            return userNetwork.get(username);
+    public User viewFriend(int userId) {
+        if (isFriend(userId)) {
+            return userNetwork.get(userId);
         }
 
         return null;
     }
 
+    // 查看好友，如果用户名重复就需要改用 ID
+    public User viewFriend(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return null;
+        }
+
+        return viewFriend(user.getUserId());
+    }
+
     // 添加双向好友关系，意思就是我这边添加了你，你那边也要添加上我
-    public void addEachOther(String username1, String username2, String password1, String password2) {
-        //判断这两个用户名字是否都存在
-        if (!userExists(username1) || !userExists(username2)) {
+    public void addEachOther(int userId1, int userId2) {
+        //判断这两个用户 ID 是否都存在
+        if (!userIdExists(userId1) || !userIdExists(userId2)) {
             return;
         }
-        // 确定这两个用户的名字不一样，如果两个用户名字一样则在控制台输出相应的信息
-        if (username1.equals(username2)) {
+        // 确定这两个用户的 ID 不一样，如果两个用户 ID 一样则在控制台输出相应的信息
+        if (userId1 == userId2) {
             System.out.println("You cannot add yourself as a friend.");
             return;
         }
         // 判断这两个用户是否已经成为了好友，如果已经成为好友那么久不能加好友，并且在控制台输出相应的信息
-        // 这里我们需要通过名字从哈希表中提取user对象并调用isFriend（）方法比较二者是否已经加上好友
-        User user1 = userNetwork.get(username1);
-        User user2 = userNetwork.get(username2);
+        // 这里我们需要通过 ID 从哈希表中提取 user 对象并比较二者是否已经加上好友
+        User user1 = userNetwork.get(userId1);
+        User user2 = userNetwork.get(userId2);
 
-        boolean user1HasUser2 = user1.getFriends().contains(username2);
-        boolean user2HasUser1 = user2.getFriends().contains(username1);
+        boolean user1HasUser2 = user1.getFriends().contains(userId2);
+        boolean user2HasUser1 = user2.getFriends().contains(userId1);
 
         if (user1HasUser2 && user2HasUser1) {
             System.out.println("You are already friends.");
@@ -223,31 +296,43 @@ public class Network {
         }
 
         if (!user1HasUser2) {
-            user1.addFriend(username2);
+            user1.addFriend(userId2);
         }
 
         if (!user2HasUser1) {
-            user2.addFriend(username1);
+            user2.addFriend(userId1);
         }
     }
 
-    // 删除双向好友关系，意思就是我这边删除了你，你那边也要删除上我
-    public void removeEachOther(String username1, String username2) {
-        //判断这两个用户名字是否都存在
-        if (!userExists(username1) || !userExists(username2)) {
+    // 添加双向好友关系，如果用户名重复就需要改用 ID
+    public void addEachOther(String username1, String username2, String password1, String password2) {
+        User user1 = getUser(username1);
+        User user2 = getUser(username2);
+
+        if (user1 == null || user2 == null) {
             return;
         }
 
-        //  确定这两个用户的名字不一样，如果两个用户名字一样则在控制台输出相应的信息
-        if (username1.equals(username2)) {
+        addEachOther(user1.getUserId(), user2.getUserId());
+    }
+
+    // 删除双向好友关系，意思就是我这边删除了你，你那边也要删除上我
+    public void removeEachOther(int userId1, int userId2) {
+        //判断这两个用户 ID 是否都存在
+        if (!userIdExists(userId1) || !userIdExists(userId2)) {
+            return;
+        }
+
+        //  确定这两个用户的 ID 不一样，如果两个用户 ID 一样则在控制台输出相应的信息
+        if (userId1 == userId2) {
             System.out.println("You cannot remove yourself as a friend.");
             return;
         }
-        User user1 = userNetwork.get(username1);
-        User user2 = userNetwork.get(username2);
+        User user1 = userNetwork.get(userId1);
+        User user2 = userNetwork.get(userId2);
 
-        boolean user1HasUser2 = user1.getFriends().contains(username2);
-        boolean user2HasUser1 = user2.getFriends().contains(username1);
+        boolean user1HasUser2 = user1.getFriends().contains(userId2);
+        boolean user2HasUser1 = user2.getFriends().contains(userId1);
 
         if (!user1HasUser2 && !user2HasUser1) {
             System.out.println("These users are not friends.");
@@ -255,17 +340,29 @@ public class Network {
         }
 
         if (user1HasUser2) {
-            user1.removeFriend(username2);
+            user1.removeFriend(userId2);
         }
 
         if (user2HasUser1) {
-            user2.removeFriend(username1);
+            user2.removeFriend(userId1);
         }
     }
 
+    // 删除双向好友关系，如果用户名重复就需要改用 ID
+    public void removeEachOther(String username1, String username2) {
+        User user1 = getUser(username1);
+        User user2 = getUser(username2);
+
+        if (user1 == null || user2 == null) {
+            return;
+        }
+
+        removeEachOther(user1.getUserId(), user2.getUserId());
+    }
+
     // 移除好友
-    public void removeFriend(String username) {
-        if (!userExists(username)) {
+    public void removeFriend(int userId) {
+        if (!userIdExists(userId)) {
             return;
         }
 
@@ -274,12 +371,22 @@ public class Network {
             return;
         }
 
-        if (!currentUser.getFriends().contains(username)) {
+        if (!currentUser.getFriends().contains(userId)) {
             System.out.println("This user is not your friend.");
             return;
         }
 
-        currentUser.removeFriend(username);
+        currentUser.removeFriend(userId);
+    }
+
+    // 移除好友，如果用户名重复就需要改用 ID
+    public void removeFriend(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return;
+        }
+
+        removeFriend(user.getUserId());
     }
 
     // 获取网络中用户的总数
@@ -293,64 +400,74 @@ public class Network {
     }
 
     // 获取任意用户的好友列表
-    public HashSet<String> getFriendsList(String username) {
-        if (!userExists(username)) {
+    public HashSet<Integer> getFriendsList(int userId) {
+        if (!userIdExists(userId)) {
             return null;
         }
 
-        return new HashSet<>(userNetwork.get(username).getFriends());
+        return new HashSet<>(userNetwork.get(userId).getFriends());
+    }
+
+    // 获取任意用户的好友列表，如果用户名重复就需要改用 ID
+    public HashSet<Integer> getFriendsList(String username) {
+        User user = getUser(username);
+        if (user == null) {
+            return null;
+        }
+
+        return getFriendsList(user.getUserId());
     }
 
     // 获取当前用户的好友列表
-    public HashSet<String> getCurrentUserFriends() {
+    public HashSet<Integer> getCurrentUserFriends() {
         if (currentUser == null) {
             System.out.println("No current user.");
             return new HashSet<>();
         }
 
-        return getFriendsList(currentUser.getUsername());
+        return getFriendsList(currentUser.getUserId());
     }
 
     // -------------------以下方法和筛选有关---------------------
 
     // 通过工作地点筛选好友
-    public HashSet<String> filterFriendsByWorkPlace(String workPlace) {
-        HashSet<String> filteredFriends = new HashSet<>();
+    public HashSet<Integer> filterFriendsByWorkPlace(String workPlace) {
+        HashSet<Integer> filteredFriends = new HashSet<>();
 
         if (currentUser == null) {
             System.out.println("No current user.");
             return filteredFriends;
         }
 
-        for (String friendUsername : currentUser.getFriends()) {
-            User friend = userNetwork.get(friendUsername);
+        for (int friendId : currentUser.getFriends()) {
+            User friend = userNetwork.get(friendId);
             if (friend != null && friend.getWorkPlace().equals(workPlace)) {
-                filteredFriends.add(friendUsername);
+                filteredFriends.add(friendId);
             }
         }
         return filteredFriends;
     }
 
     // 通过家乡筛选好友
-    public HashSet<String> filterFriendsByHomeTown(String homeTown) {
-        HashSet<String> filteredFriends = new HashSet<>();
+    public HashSet<Integer> filterFriendsByHomeTown(String homeTown) {
+        HashSet<Integer> filteredFriends = new HashSet<>();
 
         if (currentUser == null) {
             System.out.println("No current user.");
             return filteredFriends;
         }
 
-        for (String friendUsername : currentUser.getFriends()) {
-            User friend = userNetwork.get(friendUsername);
+        for (int friendId : currentUser.getFriends()) {
+            User friend = userNetwork.get(friendId);
             if (friend != null && friend.getHomeTown().equals(homeTown)) {
-                filteredFriends.add(friendUsername);
+                filteredFriends.add(friendId);
             }
         }
         return filteredFriends;
     }
 
     // 筛选和当前用户工作地点相同的好友
-    public HashSet<String> filterFriendsBySameWorkPlace() {
+    public HashSet<Integer> filterFriendsBySameWorkPlace() {
         if (currentUser == null) {
             System.out.println("No current user.");
             return new HashSet<>();
@@ -360,7 +477,7 @@ public class Network {
     }
 
     // 筛选和当前用户家乡相同的好友
-    public HashSet<String> filterFriendsBySameHomeTown() {
+    public HashSet<Integer> filterFriendsBySameHomeTown() {
         if (currentUser == null) {
             System.out.println("No current user.");
             return new HashSet<>();

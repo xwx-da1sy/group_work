@@ -82,11 +82,11 @@ public class TemporaryTester {
     private static void testUserFriends() {
         System.out.println("[testUserFriends]");
         User u = new User("charlie", "pw", "X", "Y", 3);
-        u.addFriend("dave");
-        check("addFriend", u.getFriends().contains("dave"));
+        u.addFriend(4);
+        check("addFriend", u.getFriends().contains(4));
         check("addFriend size 1", u.getFriends().size() == 1);
-        u.removeFriend("dave");
-        check("removeFriend", !u.getFriends().contains("dave"));
+        u.removeFriend(4);
+        check("removeFriend", !u.getFriends().contains(4));
         check("removeFriend size 0", u.getFriends().isEmpty());
     }
 

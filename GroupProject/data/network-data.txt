@@ -1,13 +1,13 @@
 CURRENT_USER
-alice
+0
 
 USERS
-alice|alice123|0|Dundee|University of Dundee
-bob|bob123|1|London|Tech Company
-charlie|charlie123|2|Dundee|Tech Company
-diana|diana123|3|Manchester|University of Dundee
+0|alice|alice123|Dundee|University of Dundee
+1|bob|bob123|London|Tech Company
+2|charlie|charlie123|Dundee|Tech Company
+3|diana|diana123|Manchester|University of Dundee
 
 FRIENDSHIPS
-alice|bob
-alice|charlie
-bob|diana
+0|1
+0|2
+1|3

@@ -10,7 +10,7 @@ public class User {
     private String workPlace;
     private int userId;
 
-    private HashSet<String> friends = new HashSet<String>();
+    private HashSet<Integer> friends = new HashSet<Integer>();
 
     public User(String username, String password, String homeTown, String workPlace, int userId) {
         this.username = username;
@@ -61,16 +61,16 @@ public class User {
         this.userId = userId;
     }
 
-    public HashSet<String> getFriends() {
+    public HashSet<Integer> getFriends() {
         return friends;
     }
 
     // methods about one user's friends
-    public void addFriend(String username) {
-        friends.add(username);
+    public void addFriend(int userId) {
+        friends.add(userId);
     }
 
-    public void removeFriend(String username) {
-        friends.remove(username);
+    public void removeFriend(int userId) {
+        friends.remove(userId);
     }
 }

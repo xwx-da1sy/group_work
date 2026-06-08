@@ -1,10 +1,10 @@
 CURRENT_USER
-eva
+0
 
 USERS
-eva|eva123|0|Dundee|University of Dundee
-frank|frank123|1|Glasgow|Tech Company
+0|eva|eva123|Dundee|University of Dundee
+1|frank|frank123|Glasgow|Tech Company
 
 FRIENDSHIPS
-eva|frank
-frank|eva
+0|1
+1|0

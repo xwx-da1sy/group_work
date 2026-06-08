@@ -24,13 +24,13 @@ The program does not use network programming. Instead, all users are stored in o
 
 ```text
 CURRENT_USER
-alice
+0
 
 USERS
-username|password|userId|homeTown|workPlace
+userId|username|password|homeTown|workPlace
 
 FRIENDSHIPS
-username1|username2
+userId1|userId2
 ```
 
 现在问题在于二者怎么相互产生关联，信息怎么传递，怎么保存怎么读取。
@@ -95,7 +95,39 @@ this.setVisible(true);
 
 现在明白了User ID的含义了，ID相当于每一个用户的身份证号码，是唯一的，不会重复的。我们在注册用户的时候，系统会自动生成一个唯一的ID，并且把它保存在User对象里面。在这个社交网络中，可以存在名字相同，家乡相同，工作地点等等相同的不同的用户，但是ID每一个用户是不相同的。
 
-所以我们现在需要改动很多的代码。首先是User类里面要加一个id属性，并且在构造函数里面生成一个唯一的ID。我们可以使用Java的UUID类来生成唯一的ID：
+所以我们现在把Network里面的哈希表主键改成了userId：
 
-```java
-import java.util.UUID;
+```text
+HashMap<Integer, User>
+```
+
+也就是说：
+
+```text
+key = userId
+value = User对象
+```
+
+同时User里面的好友集合也从保存username改成保存userId：
+
+```text
+HashSet<Integer> friends
+```
+
+这样即使两个用户名字一样，也不会互相覆盖。添加好友、删除好友、保存好友关系的时候，底层都使用ID来处理。为了使用方便，代码里面仍然保留了一些按照名字操作的方法，但是如果这个名字对应多个用户，就会提示需要改用ID，避免误操作。
+
+文件格式也跟着改成ID版本：
+
+```text
+CURRENT_USER
+0
+
+USERS
+0|alice|alice123|Dundee|University of Dundee
+1|alice|anotherPassword|London|Tech Company
+
+FRIENDSHIPS
+0|1
+```
+
+现在的设计逻辑是：ID是唯一身份，username只是用户资料里面的显示名字。username可以重复，但是userId不能重复。

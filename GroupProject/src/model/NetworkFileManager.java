@@ -11,13 +11,13 @@ import java.io.PrintWriter;
 // 文本大体格式如下：
 //
 //      CURRENT_USER
-//      保存当前用户 username
+//      保存当前用户 userId
 //
 //      USERS
-//      username|password|userId|homeTown|workPlace
+//      userId|username|password|homeTown|workPlace
 //
 //      FRIENDSHIPS
-//      username1|username2
+//      userId1|userId2
 
 public class NetworkFileManager {
     // 保存文件的路径，我们一般选择相对路径
@@ -80,8 +80,8 @@ public class NetworkFileManager {
         // 用来保存从文件中恢复出来的整个社交网络
         Network network = new Network();
 
-        // 用来暂时保存文件中记录的当前用户 username
-        String currentUsername = null;
+        // 用来暂时保存文件中记录的当前用户 ID
+        int currentUserId = -1;
 
         // 用来保存每一次从文件中读取到的一行文本
         String line = null;
@@ -95,8 +95,8 @@ public class NetworkFileManager {
 
             // 确认第一部分是当前用户信息
             if (CURRENT_USER_SECTION.equals(line)) {
-                // 读取当前用户的 username
-                currentUsername = reader.readLine();
+                // 读取当前用户的 userId
+                currentUserId = Integer.parseInt(reader.readLine());
             }
 
             // 继续一行一行读取文件，直到读完最后一行
@@ -124,9 +124,9 @@ public class NetworkFileManager {
                 if (USERS_SECTION.equals(currentSection)) {
                     String[] userInformation = line.split(READ_SEPARATOR);
 
-                    String username = userInformation[0];
-                    String password = userInformation[1];
-                    int userId = Integer.parseInt(userInformation[2]);
+                    int userId = Integer.parseInt(userInformation[0]);
+                    String username = userInformation[1];
+                    String password = userInformation[2];
                     String homeTown = userInformation[3];
                     String workPlace = userInformation[4];
 
@@ -138,16 +138,16 @@ public class NetworkFileManager {
                 if (FRIENDSHIPS_SECTION.equals(currentSection)) {
                     String[] friendshipInformation = line.split(READ_SEPARATOR);
 
-                    String username1 = friendshipInformation[0];
-                    String username2 = friendshipInformation[1];
+                    int userId1 = Integer.parseInt(friendshipInformation[0]);
+                    int userId2 = Integer.parseInt(friendshipInformation[1]);
 
-                    network.addEachOther(username1, username2, null, null);
+                    network.addEachOther(userId1, userId2);
                 }
             }
 
-            // 根据文件中保存的 username 恢复当前用户
-            if (currentUsername != null) {
-                network.setCurrentUser(network.getUser(currentUsername));
+            // 根据文件中保存的 userId 恢复当前用户
+            if (currentUserId != -1) {
+                network.setCurrentUserById(currentUserId);
             }
         } catch (IOException e) {
             System.out.println("Failed to read network file.");
@@ -164,16 +164,16 @@ public class NetworkFileManager {
             // 写入当前用户部分
             writer.println(CURRENT_USER_SECTION);
             if (network.getCurrentUser() != null) {
-                writer.println(network.getCurrentUser().getUsername());
+                writer.println(network.getCurrentUser().getUserId());
             }
 
             // 写入用户信息部分
             writer.println();
             writer.println(USERS_SECTION);
             for (User user : network.getAllUsers()) {
-                writer.println(user.getUsername()
+                writer.println(user.getUserId()
+                        + WRITE_SEPARATOR + user.getUsername()
                         + WRITE_SEPARATOR + user.getPassword()
-                        + WRITE_SEPARATOR + user.getUserId()
                         + WRITE_SEPARATOR + user.getHomeTown()
                         + WRITE_SEPARATOR + user.getWorkPlace());
             }
@@ -182,8 +182,8 @@ public class NetworkFileManager {
             writer.println();
             writer.println(FRIENDSHIPS_SECTION);
             for (User user : network.getAllUsers()) {
-                for (String friendUsername : user.getFriends()) {
-                    writer.println(user.getUsername() + WRITE_SEPARATOR + friendUsername);
+                for (int friendId : user.getFriends()) {
+                    writer.println(user.getUserId() + WRITE_SEPARATOR + friendId);
                 }
             }
         } catch (IOException e) {
