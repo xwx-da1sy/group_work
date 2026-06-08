@@ -117,8 +117,7 @@ public class TemporaryTester {
         n.addUser(u1);
         User u2 = new User("eve", "pw2", "H2", "W2", 1);
         n.addUser(u2);
-        User eve = n.getUser("eve");
-        check("duplicate-password unchanged", eve != null && "pw".equals(eve.getPassword()));
+        check("duplicate-name-allowed", n.getUserIdsByUsername("eve").size() == 2);
     }
 
     private static void testNetworkFull() {
@@ -143,7 +142,7 @@ public class TemporaryTester {
         check("createUser-nextUserId", u.getUserId() >= 0);
 
         User dup = n.createUser("frank", "x", "x", "x");
-        check("createUser-dup-null", dup == null);
+        check("createUser-duplicate-name-allowed", dup != null && dup.getUserId() != u.getUserId());
     }
 
     private static void testGetUser() {
@@ -161,21 +160,21 @@ public class TemporaryTester {
         Network n = new Network();
         n.createUser("henry", "secret", "H", "W");
 
-        check("checkLogin-correct", n.checkLogin("henry", "secret"));
+        check("checkLogin-correct", n.checkLogin(0, "secret"));
         check("checkLogin-currentUser", n.getCurrentUser() != null && "henry".equals(n.getCurrentUser().getUsername()));
 
         n.clearCurrentUser();
-        check("checkLogin-wrong-pw", !n.checkLogin("henry", "wrong"));
-        check("checkLogin-non-existing", !n.checkLogin("nobody", "pw"));
+        check("checkLogin-wrong-pw", !n.checkLogin(0, "wrong"));
+        check("checkLogin-non-existing", !n.checkLogin(99, "pw"));
     }
 
     private static void testCheckPassword() {
         System.out.println("[testCheckPassword]");
         Network n = new Network();
         n.createUser("iris", "mypw", "H", "W");
-        check("checkPassword-correct", n.checkPassword("iris", "mypw"));
-        check("checkPassword-wrong", !n.checkPassword("iris", "bad"));
-        check("checkPassword-non-existing", !n.checkPassword("nobody", "pw"));
+        check("checkPassword-correct", n.checkPassword(0, "mypw"));
+        check("checkPassword-wrong", !n.checkPassword(0, "bad"));
+        check("checkPassword-non-existing", !n.checkPassword(99, "pw"));
     }
 
     private static void testSetAndClearCurrentUser() {
@@ -184,7 +183,7 @@ public class TemporaryTester {
         n.createUser("jack", "pw", "H", "W");
         n.createUser("kate", "pw", "H", "W");
 
-        n.checkLogin("jack", "pw");
+        n.checkLogin(0, "pw");
         check("login-jack", "jack".equals(n.getCurrentUser().getUsername()));
 
         n.clearCurrentUser();
@@ -203,7 +202,7 @@ public class TemporaryTester {
         n.createUser("leo", "pw", "H", "W");
         n.createUser("mia", "pw", "H", "W");
 
-        n.checkLogin("leo", "pw");
+        n.checkLogin(0, "pw");
         check("isFriend-before-add", !n.isFriend("mia"));
 
         n.addEachOther("leo", "mia", "pw", "pw");
@@ -218,7 +217,7 @@ public class TemporaryTester {
 
         n.addEachOther("nick", "olivia", "pw", "pw");
 
-        n.checkLogin("nick", "pw");
+        n.checkLogin(0, "pw");
         User friend = n.viewFriend("olivia");
         check("viewFriend-returns-user", friend != null && "olivia".equals(friend.getUsername()));
 
@@ -233,7 +232,7 @@ public class TemporaryTester {
         n.createUser("quincy", "pw", "H", "W");
 
         n.addEachOther("peter", "quincy", "pw", "pw");
-        n.checkLogin("peter", "pw");
+        n.checkLogin(0, "pw");
 
         check("beforeRemove", n.isFriend("quincy"));
 
@@ -251,8 +250,8 @@ public class TemporaryTester {
 
         User rachel = n.getUser("rachel");
         User steve = n.getUser("steve");
-        check("addEachOther-rachel-has-steve", rachel.getFriends().contains("steve"));
-        check("addEachOther-steve-has-rachel", steve.getFriends().contains("rachel"));
+        check("addEachOther-rachel-has-steve", rachel.getFriends().contains(steve.getUserId()));
+        check("addEachOther-steve-has-rachel", steve.getFriends().contains(rachel.getUserId()));
 
         n.addEachOther("rachel", "steve", "pw", "pw");
         check("addEachOther-already-friends (idempotent)", true);
@@ -269,8 +268,8 @@ public class TemporaryTester {
 
         User tom = n.getUser("tom");
         User uma = n.getUser("uma");
-        check("removeEachOther-tom", !tom.getFriends().contains("uma"));
-        check("removeEachOther-uma", !uma.getFriends().contains("tom"));
+        check("removeEachOther-tom", !tom.getFriends().contains(uma.getUserId()));
+        check("removeEachOther-uma", !uma.getFriends().contains(tom.getUserId()));
     }
 
     private static void testConstructorWithCurrentUser() {

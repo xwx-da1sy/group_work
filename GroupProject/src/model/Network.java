@@ -188,16 +188,6 @@ public class Network {
         return true;
     }
 
-    // 用户登录，如果用户名重复就需要改用 ID
-    public boolean checkLogin(String username, String password) {
-        User user = getUser(username);
-        if (user == null) {
-            return false;
-        }
-
-        return checkLogin(user.getUserId(), password);
-    }
-
     // 判断同一个用户 ID 下面的密码是否和输入的密码相同
     public boolean checkPassword(int userId, String password) {
         if (!userIdExists(userId)) {
@@ -210,16 +200,6 @@ public class Network {
 
         System.out.println("Incorrect password.");
         return false;
-    }
-
-    // 判断同一个用户名下面的密码是否和输入的密码相同，如果用户名重复就需要改用 ID
-    public boolean checkPassword(String username, String password) {
-        User user = getUser(username);
-        if (user == null) {
-            return false;
-        }
-
-        return checkPassword(user.getUserId(), password);
     }
 
     // 检查当前用户是否存在该好友

@@ -131,3 +131,5 @@ FRIENDSHIPS
 ```
 
 现在的设计逻辑是：ID是唯一身份，username只是用户资料里面的显示名字。username可以重复，但是userId不能重复。
+
+登录逻辑也统一改成使用userId和password，不再使用username和password登录。原因是username现在允许重复，如果用username登录会出现歧义。username后面可以用来显示用户信息，或者查询同名用户对应的ID，但是最终登录和建立准确关系都应该使用ID。
