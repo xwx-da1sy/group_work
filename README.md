@@ -544,3 +544,272 @@ Logout区域：BorderLayout
 ```
 
 这次优化让我更清楚一点：不是所有地方都适合GridBagLayout。GridBagLayout适合需要精细控制位置的地方，但是按钮区这种“统一大小、整齐排列”的地方，GridLayout反而更简单、更稳定。
+
+### 6.9后续开发复盘
+
+今天后面主要继续围绕MainUI和Network ID两个方向去推进。整体感觉是：我们不是单纯在写代码，而是在不断修正“什么东西应该放在哪里”。
+
+第一件比较大的事情是修改社交网络ID。之前的社交网络ID使用的是时间戳：
+
+```text
+1780985351528
+```
+
+这个做法的好处是基本不会重复，但是问题也很明显：太长、太乱、用户登录的时候很难输入，也不适合展示给老师检查。
+
+后来我们讨论以后，决定把社交网络ID改成：
+
+```text
+日期 + 当天序号
+```
+
+比如：
+
+```text
+20260609-0
+20260609-1
+```
+
+这样一眼就能看出来这个社交网络是哪一天创建的，同时同一天也可以创建多个社交网络。
+
+为了支持这个新格式，我们把`networkId`从`long`改成了`String`。这一步影响比较大，因为文件保存、文件读取、登录、主界面显示都要跟着改。现在文件名也变成：
+
+```text
+data/network-20260609-0.txt
+```
+
+文件里面的格式也同步变成：
+
+```text
+NETWORK_ID
+20260609-0
+```
+
+这里我们还踩了一个小坑：代码改成新ID以后，旧的`network-0.txt`文件也要同步改。否则代码逻辑和data文件夹里的真实文件就不一致。后来我们把旧文件迁移成：
+
+```text
+network-20260609-0.txt
+```
+
+并且把文件内部的`NETWORK_ID`也改成了`20260609-0`。
+
+### MainController接住Network
+
+第二件重要的事情是MainController的职责变清楚了。
+
+我们之前有一个争论：MainUI到底应该直接接收`networkId`、`currentUserId`、`username`这些数据，还是应该接收一个MainController。
+
+一开始我们觉得，只是展示数据的话，MainUI直接接收几个值也可以，因为这不算业务逻辑。但是后面我们继续推进以后发现，MainUI接下来不只是显示顶部信息，还要根据整个Network渲染通讯录用户列表，还要点击用户按钮查看用户信息。
+
+所以最后我们决定：
+
+```text
+BeginController负责登录和注册
+登录或注册成功以后得到Network对象
+LoginUI创建MainController
+MainController接住完整的Network对象
+MainUI接收MainController
+```
+
+现在流程变成：
+
+```text
+LoginUI
+    -> BeginController
+        -> Network
+    -> MainController(Network)
+    -> MainUI(MainController)
+```
+
+这样MainUI不需要保存一堆零散数据，后面需要查用户、查好友、保存网络，都可以通过MainController继续往下走。
+
+### 通讯录从文本列表改成按钮
+
+第三件重要的事情是通讯录区域的展示方式发生了变化。
+
+最开始我们用的是：
+
+```text
+DefaultListModel<String>
+JList<String>
+JScrollPane
+```
+
+这个方式简单，可以把用户信息当成一行一行文本展示出来。但是后来我们觉得这个不太像真正的通讯录。我们想要的效果是：
+
+```text
+每一个用户都是一个按钮
+点击用户按钮以后弹出这个用户的详细信息
+```
+
+这个逻辑更符合通讯录，也更符合按钮的业务含义。
+
+所以我们把中间区域改成：
+
+```text
+userButtonPanel
+BoxLayout.Y_AXIS
+JScrollPane(userButtonPanel)
+```
+
+这里的BoxLayout可以简单理解成：
+
+```text
+让组件按照一个方向排队
+```
+
+我们使用：
+
+```text
+BoxLayout.Y_AXIS
+```
+
+意思就是从上到下排列：
+
+```text
+[0 alice]
+[1 bob]
+[2 charlie]
+[3 diana]
+```
+
+外面再套一个`JScrollPane`，这样用户多的时候可以滚动。
+
+### 用户按钮背后的逻辑
+
+一开始我们用字符串来创建按钮：
+
+```text
+ID: 0    Name: alice    Home: Dundee    Work: University of Dundee
+```
+
+但是我们很快发现，如果按钮只是保存一段字符串，后面点击按钮的时候就很麻烦。我们需要知道这个按钮背后对应的是哪一个`userId`，而不是从字符串里面反推ID。
+
+所以后面我们调整成：
+
+```text
+MainController提供所有User对象
+MainUI遍历User对象
+每一个User对象创建一个按钮
+按钮背后保存自己的userId
+```
+
+点击按钮以后：
+
+```text
+MainUI把userId交给MainController
+MainController通过Network查找User对象
+MainUI创建一个新的用户信息窗口
+```
+
+用户信息窗口现在显示：
+
+```text
+User ID
+Username
+Home Town
+Work Place
+Friends Count
+Close
+```
+
+这一步让MainUI开始真正像一个通讯录了，而不是只显示静态文本。
+
+### ArrayList、HashSet和HashMap的讨论
+
+今天还有一个很重要的数据结构讨论。
+
+我们之前底层一直使用：
+
+```text
+HashMap<Integer, User>
+HashSet<Integer>
+```
+
+所以当MainController里出现`ArrayList<User>`的时候，我们就讨论了为什么这里不用HashSet或者HashMap。
+
+现在的理解是：
+
+```text
+HashMap适合通过userId快速找到User对象
+HashSet适合保存不重复的好友ID
+ArrayList适合给UI按照固定顺序展示
+```
+
+也就是说：
+
+```text
+底层存储和查找：HashMap
+好友关系：HashSet
+界面展示顺序：ArrayList
+```
+
+如果我们要通过ID找一个用户，最好的结构确实是HashMap，因为它是：
+
+```text
+key = userId
+value = User对象
+```
+
+这个逻辑已经在Network里面实现了。MainController里的：
+
+```text
+getUserById(userId)
+```
+
+本质上就是让Network通过HashMap去找用户。
+
+但是如果我们要在UI上显示所有用户，就一定要把所有用户拿出来走一遍。这个时候我们希望顺序稳定，比如按照ID从小到大显示，所以MainController临时使用ArrayList来排序和展示。
+
+所以最后的结论是：
+
+```text
+渲染列表时使用ArrayList
+点击按钮查找具体用户时使用HashMap
+```
+
+这不是风格不一致，而是不同数据结构负责不同工作。
+
+### 今天踩过的坑和修正
+
+今天踩过的坑还挺多。
+
+第一个坑是Network ID太长。时间戳虽然不重复，但是不适合用户手动输入。后来改成日期加序号。
+
+第二个坑是只改代码不改data文件。Network ID规则改了以后，data文件里面的文件名和`NETWORK_ID`也必须同步改。
+
+第三个坑是MainUI一开始只接收零散的展示数据。这个短期能用，但是一旦主界面要渲染用户列表和处理点击事件，就不够用了。所以后来改成MainController接住完整Network。
+
+第四个坑是JList虽然简单，但是不够像通讯录。后来改成每一个用户一个JButton。
+
+第五个坑是如果按钮只保存字符串，后面点击按钮就很难知道对应哪个User。后来改成遍历User对象，让每个按钮背后天然有自己的userId。
+
+第六个坑是我一开始写了一些对初学者不太友好的代码，比如lambda表达式和太长的字符串拼接。后来我们统一改成更展开的写法，尽量让每一步都能看懂。
+
+第七个坑是底部按钮区域出现了Swing显示残影。我们尝试了`setOpaque(true)`、取消焦点绘制、换布局方式等。这个问题看起来更像Swing在Windows默认外观下的重绘残影，点击后会消失，暂时不影响功能。后面如果统一美化按钮，可以再处理。
+
+### 当前状态
+
+现在程序大概已经走通了这个流程：
+
+```text
+登录或注册
+加载或创建Network
+MainController接住Network
+MainUI显示当前Network和currentUser
+MainUI根据Network渲染所有用户按钮
+点击用户按钮
+弹出用户信息窗口
+```
+
+接下来比较自然的方向是继续补按钮业务：
+
+```text
+Add User
+Add Friend
+Remove Friend
+Save
+Logout
+```
+
+但是下一步不应该一下子全写完。比较合理的顺序是先做一个最简单、最能闭环的按钮，比如`Save`或者`Logout`，然后再做添加好友和删除好友这种会影响Network数据结构的业务。

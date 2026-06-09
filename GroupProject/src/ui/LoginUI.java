@@ -1,6 +1,7 @@
 package ui;
 
 import controller.BeginController;
+import controller.MainController;
 import model.Network;
 
 import javax.swing.*;
@@ -154,7 +155,8 @@ public class LoginUI extends JFrame {
                 JOptionPane.showMessageDialog(this, "Login successfully.");
 
                 // 登录成功之后打开主窗口
-                new MainUI();
+                MainController mainController = new MainController(network);
+                new MainUI(mainController);
 
                 // 关闭登录界面，彻底摧毁窗口释放占用的资源
                 this.dispose();
@@ -369,7 +371,8 @@ public class LoginUI extends JFrame {
                             + "File: " + beginController.getFilePath());
 
             // 注册成功之后打开主窗口
-            new MainUI();
+            MainController mainController = new MainController(newNetwork);
+            new MainUI(mainController);
 
             // 关闭注册新社交网络的界面，彻底摧毁窗口释放占用的资源
             registerNetworkFrame.dispose();

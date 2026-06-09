@@ -9,12 +9,12 @@ public class BeginController {
 
     private Network network;
     private NetworkFileManager fileManager;
-    private long networkId;
+    private String networkId;
 
     public BeginController() {
         fileManager = new NetworkFileManager();
         network = null;
-        networkId = -1;
+        networkId = null;
     }
 
     // 注册一个新的社交网络，同时创建这个社交网络中的第一个用户
@@ -45,15 +45,7 @@ public class BeginController {
             return null;
         }
 
-        long parsedNetworkId;
-        try {
-            parsedNetworkId = Long.parseLong(networkId);
-        } catch (NumberFormatException e) {
-            System.out.println("Network ID must be a number.");
-            return null;
-        }
-
-        String filePath = NetworkFileManager.buildNetworkFilePath(parsedNetworkId);
+        String filePath = NetworkFileManager.buildNetworkFilePath(networkId);
         File networkFile = new File(filePath);
 
         if (!networkFile.exists()) {
@@ -62,7 +54,7 @@ public class BeginController {
         }
 
         // 通过文件管理器去读取这个文本文档
-        loadedNetwork = fileManager.loadNetwork(parsedNetworkId);
+        loadedNetwork = fileManager.loadNetwork(networkId);
 
         // 检查哪一个信息是否有误，遇见有误信息返回空
         if (loadedNetwork == null) {
@@ -119,18 +111,13 @@ public class BeginController {
         return loadedNetwork;
     }
 
-    // 处理用户登录之后的逻辑
-    public Network handleLogin(long networkId, int userId, String password) {
-        return handleLogin(String.valueOf(networkId), userId, password);
-    }
-
     // 获取当前控制器正在管理的社交网络
     public Network getNetwork() {
         return network;
     }
 
     // 获取当前社交网络的 ID
-    public long getNetworkId() {
+    public String getNetworkId() {
         return networkId;
     }
 

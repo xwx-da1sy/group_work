@@ -1,5 +1,8 @@
 package model;
 
+import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -7,9 +10,8 @@ import java.util.HashSet;
 public class Network {
 
     private static final int MAX_USERS = 20;
-    private static long nextNetworkId = System.currentTimeMillis();
 
-    private long networkId;
+    private String networkId;
     private int totalUsers;
     private int nextUserId;
     private HashMap<Integer, User> userNetwork;
@@ -23,7 +25,7 @@ public class Network {
         currentUser = null;
     }
 
-    public Network(long networkId) {
+    public Network(String networkId) {
         this();
         setNetworkId(networkId);
     }
@@ -43,19 +45,31 @@ public class Network {
     // ----------------------以下方法和基础检查有关------------------------
 
     // 自动生成一个新的社交网络 ID
-    private static long generateNetworkId() {
-        return nextNetworkId++;
+    private static String generateNetworkId() {
+        String dateText = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        int index = 0;
+
+        while (true) {
+            String possibleNetworkId = dateText + "-" + index;
+            String filePath = NetworkFileManager.buildNetworkFilePath(possibleNetworkId);
+            File networkFile = new File(filePath);
+
+            if (!networkFile.exists()) {
+                return possibleNetworkId;
+            }
+
+            index++;
+        }
     }
 
     // 获取当前社交网络的 ID
-    public long getNetworkId() {
+    public String getNetworkId() {
         return networkId;
     }
 
     // 设置当前社交网络的 ID
-    public void setNetworkId(long networkId) {
+    public void setNetworkId(String networkId) {
         this.networkId = networkId;
-        nextNetworkId = Math.max(nextNetworkId, networkId + 1);
     }
 
     // 检查网络中是否已经存在该 ID 对应的 user

@@ -31,7 +31,7 @@ public class NetworkFileManager {
     private static final String DATA_FOLDER = "data";
     private static final String NETWORK_FILE_PREFIX = "network-";
     private static final String FILE_EXTENSION = ".txt";
-    private static final String DEFAULT_FILE_PATH = buildNetworkFilePath(0);
+    private static final String DEFAULT_FILE_PATH = buildNetworkFilePath("0");
     private static final String NETWORK_ID_SECTION = "NETWORK_ID";
     private static final String CURRENT_USER_SECTION = "CURRENT_USER";
     private static final String USERS_SECTION = "USERS";
@@ -60,7 +60,7 @@ public class NetworkFileManager {
     }
 
     // 根据社交网络 ID 生成对应的文件路径
-    public static String buildNetworkFilePath(long networkId) {
+    public static String buildNetworkFilePath(String networkId) {
         return getDataFolderPath() + File.separator + NETWORK_FILE_PREFIX + networkId + FILE_EXTENSION;
     }
 
@@ -76,7 +76,7 @@ public class NetworkFileManager {
     }
 
     // 根据社交网络 ID 读取对应的社交网络文件
-    public Network loadNetwork(long networkId) {
+    public Network loadNetwork(String networkId) {
         filePath = buildNetworkFilePath(networkId);
         return loadNetwork();
     }
@@ -87,7 +87,7 @@ public class NetworkFileManager {
         Network network = new Network();
 
         // 用来暂时保存文件中记录的社交网络 ID
-        long networkId = -1;
+        String networkId = null;
 
         // 用来暂时保存文件中记录的当前用户 ID
         int currentUserId = -1;
@@ -105,7 +105,7 @@ public class NetworkFileManager {
             // 确认第一部分是社交网络 ID 信息
             if (NETWORK_ID_SECTION.equals(line)) {
                 // 读取当前社交网络的 ID
-                networkId = Long.parseLong(reader.readLine());
+                networkId = reader.readLine();
                 network.setNetworkId(networkId);
             }
 
@@ -219,7 +219,7 @@ public class NetworkFileManager {
     }
 
     // 根据社交网络 ID 把社交网络保存到对应的文件中
-    public void saveNetwork(Network network, long networkId) {
+    public void saveNetwork(Network network, String networkId) {
         network.setNetworkId(networkId);
         filePath = buildNetworkFilePath(networkId);
         saveNetwork(network);
