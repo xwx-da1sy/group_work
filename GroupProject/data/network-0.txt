@@ -5,12 +5,12 @@ CURRENT_USER
 0
 
 USERS
-0|alice|alice123|Dundee|University of Dundee
+3|diana|diana123|Manchester|University of Dundee
 1|bob|bob123|London|Tech Company
 2|charlie|charlie123|Dundee|Tech Company
-3|diana|diana123|Manchester|University of Dundee
+0|alice|alice123|Dundee|University of Dundee
 
 FRIENDSHIPS
+1|3
 0|1
 0|2
-1|3

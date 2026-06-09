@@ -27,10 +27,11 @@ public class NetworkFileManager {
     private String filePath;
 
     // 一些保存文本的格式，保存必须去遵循的一些规则
+    private static final String PROJECT_FOLDER = "GroupProject";
     private static final String DATA_FOLDER = "data";
     private static final String NETWORK_FILE_PREFIX = "network-";
     private static final String FILE_EXTENSION = ".txt";
-    private static final String DEFAULT_FILE_PATH = "data/network-0.txt";
+    private static final String DEFAULT_FILE_PATH = buildNetworkFilePath(0);
     private static final String NETWORK_ID_SECTION = "NETWORK_ID";
     private static final String CURRENT_USER_SECTION = "CURRENT_USER";
     private static final String USERS_SECTION = "USERS";
@@ -60,7 +61,18 @@ public class NetworkFileManager {
 
     // 根据社交网络 ID 生成对应的文件路径
     public static String buildNetworkFilePath(long networkId) {
-        return DATA_FOLDER + "/" + NETWORK_FILE_PREFIX + networkId + FILE_EXTENSION;
+        return getDataFolderPath() + File.separator + NETWORK_FILE_PREFIX + networkId + FILE_EXTENSION;
+    }
+
+    // 获取真正用来保存社交网络文件的data文件夹路径
+    private static String getDataFolderPath() {
+        File projectDataFolder = new File(PROJECT_FOLDER + File.separator + DATA_FOLDER);
+
+        if (projectDataFolder.exists()) {
+            return projectDataFolder.getPath();
+        }
+
+        return DATA_FOLDER;
     }
 
     // 根据社交网络 ID 读取对应的社交网络文件
