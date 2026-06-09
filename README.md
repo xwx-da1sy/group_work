@@ -472,3 +472,75 @@ No friends loaded yet.
 ```
 
 也就是说，目前MainUI的重点是“结构能跑起来”，后面再慢慢解决“界面不拥挤、看起来舒服”的问题。
+
+### MainUI底部区域布局修正
+
+后面我们继续优化了MainUI下面的按钮区域。最开始我们尝试在底部区域直接使用GridBagLayout，把按钮按照下面这种方式摆放：
+
+```text
+Add User       Add Friend
+Remove Friend  Save
+Logout
+```
+
+但是这里出现了一个问题：左边按钮比右边按钮长，看起来不整齐，甚至有一点像覆盖到了上面的区域。
+
+问题原因不是按钮本身，而是GridBagLayout会根据组件的首选大小去计算列宽。因为：
+
+```text
+Remove Friend
+```
+
+这个按钮的文字比：
+
+```text
+Save
+```
+
+长很多，所以左边那一列会被撑得更宽，右边那一列就会变短。这样虽然代码里面设置了weightx，但是视觉上还是不够整齐。
+
+所以我们后面把底部区域改成了一个更清楚的嵌套结构：
+
+```text
+bottomPanel: BorderLayout
+
+CENTER -> bottomButtonPanel: GridLayout(2, 2, 8, 8)
+SOUTH  -> logoutPanel: BorderLayout
+```
+
+其中四个主要按钮放在：
+
+```text
+bottomButtonPanel
+```
+
+这个panel使用：
+
+```text
+GridLayout(2, 2, 8, 8)
+```
+
+这样四个按钮会自动等宽等高：
+
+```text
+Add User        Add Friend
+Remove Friend   Save
+```
+
+Logout按钮单独放在：
+
+```text
+logoutPanel
+```
+
+`logoutPanel`自己使用BorderLayout，然后把`logoutButton`放在CENTER位置。这样做的原因是，我们可以给`logoutPanel`添加上边距，让Logout和上面的四个按钮分开一点，同时不破坏按钮自己的边框样式。
+
+所以现在底部区域最终选择的布局方式是：
+
+```text
+SOUTH最外层：BorderLayout
+四个主要按钮：GridLayout
+Logout区域：BorderLayout
+```
+
+这次优化让我更清楚一点：不是所有地方都适合GridBagLayout。GridBagLayout适合需要精细控制位置的地方，但是按钮区这种“统一大小、整齐排列”的地方，GridLayout反而更简单、更稳定。

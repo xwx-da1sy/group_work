@@ -117,8 +117,55 @@ public class MainUI extends JFrame {
         // ---------------------------底部区域组件------------------------
 
         // 创建底部区域，用来放各种操作按钮
-        JPanel bottomPanel = new JPanel();
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        // 给底部区域添加一点上边距，让按钮不要紧贴中间列表
+        bottomPanel.setBorder(BorderFactory.createEmptyBorder(12, 0, 0, 0));
         mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        // 创建底部按钮区域，用GridLayout保证左右按钮一样长
+        JPanel bottomButtonPanel = new JPanel(new GridLayout(2, 2, 8, 8));
+
+        // 添加各种操作按钮
+        JButton addUserButton = new JButton("Add User");
+        addUserButton.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JButton addFriendButton = new JButton("Add Friend");
+        addFriendButton.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JButton removeFriendButton = new JButton("Remove Friend");
+        removeFriendButton.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JButton saveButton = new JButton("Save");
+        saveButton.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        // 把添加用户按钮放进底部按钮区域
+        bottomButtonPanel.add(addUserButton);
+
+        // 把添加好友按钮放进底部按钮区域
+        bottomButtonPanel.add(addFriendButton);
+
+        // 把删除好友按钮放进底部按钮区域
+        bottomButtonPanel.add(removeFriendButton);
+
+        // 把保存按钮放进底部按钮区域
+        bottomButtonPanel.add(saveButton);
+
+        // 把四个主要操作按钮放进底部区域的中间
+        bottomPanel.add(bottomButtonPanel, BorderLayout.CENTER);
+
+        // 创建退出登录按钮区域，用来单独放退出登录按钮
+        JPanel logoutPanel = new JPanel(new BorderLayout());
+        // 给退出登录按钮区域添加一点上边距，避免和上面的按钮贴在一起
+        logoutPanel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
+
+        // 把退出登录按钮放进退出登录按钮区域
+        logoutPanel.add(logoutButton, BorderLayout.CENTER);
+
+        // 把退出登录按钮放在底部区域的下方
+        bottomPanel.add(logoutPanel, BorderLayout.SOUTH);
 
         this.add(mainPanel);
 
