@@ -580,4 +580,14 @@ public class Network {
 
         return filterFriendsOfFriendsByHomeTown(currentUser.getUserId(), currentUser.getHomeTown());
     }
+
+    // 检查社交网络中用户ID是否存在
+    public boolean checkUserIdExists(int userId) {
+        if (!userIdExists(userId)) {
+            System.out.println("This user ID does not exist.");
+            return false;
+        }
+
+        return true;
+    }
 }

@@ -246,3 +246,140 @@ HashSet<Integer> friends
 文件保存也更干净了：一个Network对应一个`network-ID.txt`文件，好友关系只保存一边，读取的时候再恢复成双向关系。
 
 目前TemporaryTester已经通过了基础测试，说明这次ID逻辑修改以后，创建用户、登录、好友关系、筛选和基础读取保存没有明显崩掉。
+
+## 6.9
+
+### 当前代码架构图
+
+现在项目大体按照MVC的思路去组织，但是我们不想为了封装而封装。也就是说，UI、Controller、Model之间要分清楚职责，但是目前还没有被我搞得乱七八糟的感觉。现在的代码架构大体是这样的：
+
+```mermaid
+flowchart TD
+    Main["ui.Main<br/>程序入口"] --> LoginUI["ui.LoginUI<br/>登录和注册社交网络界面"]
+
+    LoginUI --> BeginController["controller.BeginController<br/>处理开始界面的业务逻辑"]
+
+    BeginController --> NetworkFileManager["model.NetworkFileManager<br/>读取和保存txt文件"]
+    BeginController --> Network["model.Network<br/>保存整个社交网络"]
+
+    Network --> UserMap["HashMap<Integer, User><br/>key = userId<br/>value = User对象"]
+    Network --> CurrentUser["currentUser<br/>当前用户视角"]
+    UserMap --> User["model.User<br/>用户个人信息"]
+    User --> FriendSet["HashSet<Integer> friends<br/>保存好友的userId"]
+
+    NetworkFileManager --> DataFile["data/network-ID.txt<br/>NETWORK_ID / CURRENT_USER / USERS / FRIENDSHIPS"]
+
+    LoginUI -.登录成功后后面要打开.-> MainController["controller.MainController<br/>处理主窗口业务逻辑"]
+    MainController -.后面要控制.-> MainUI["ui.MainUI<br/>主社交网络窗口"]
+    MainController -.操作.-> Network
+```
+
+用文字描述就是：
+
+```text
+LoginUI负责登录窗口、注册窗口、按钮、输入框、弹窗。
+BeginController负责加载已有社交网络、检查用户ID、核对密码、注册新社交网络。
+NetworkFileManager负责把Network对象保存到txt文件，也负责从txt文件恢复Network对象。
+Network负责保存所有User对象、当前用户、好友关系和筛选逻辑。
+User负责保存单个用户的信息，以及这个用户自己的好友ID集合。
+```
+
+目前主窗口相关的`MainUI`和`MainController`还只是空框架。下一步不是急着写一堆功能，而是先确定主窗口长什么样子。
+
+### 主窗口设计讨论
+
+我们设想的主窗口不是复杂的网页式页面，也不需要做得像真正的网络聊天软件那么大。更合理的方向是做成“手机通讯录”或者“微信联系人列表”那样的简单窗口。
+
+主窗口打开以后，用户应该第一眼看到自己所在的社交网络，以及当前登录的是哪一个用户。比如窗口顶部可以显示：
+
+```text
+Network ID: 1780911567965
+Current User: eva
+User ID: 0
+```
+
+窗口中间主要显示用户列表。这个列表可以先显示当前用户的好友，也可以后面切换成显示整个社交网络中的所有用户。考虑到我们这是社交网络程序，主界面优先显示“我的好友”更自然。
+
+一个好友在列表里面大概显示成：
+
+```text
+0  eva
+1  frank
+2  alice
+```
+
+或者稍微丰富一点：
+
+```text
+1  frank    Glasgow
+2  alice    Dundee
+```
+
+我们先不要在主窗口里堆太多文字。主窗口应该负责“看见有哪些用户”，而不是一次性把每个用户的所有信息都展示出来。
+
+当鼠标点击某一个用户的时候，再弹出一个个人信息窗口。这个个人信息窗口可以显示：
+
+```text
+User ID
+Username
+Home Town
+Work Place
+Friends Count
+```
+
+后面如果要添加功能，也可以把按钮放在个人信息窗口里面，例如：
+
+```text
+Add Friend
+Remove Friend
+View Friends
+```
+
+这样主窗口保持干净，个人窗口负责展示细节。这个逻辑比较像通讯录：列表只显示联系人，点击联系人以后才看详细资料。
+
+### 主窗口初步结构
+
+先不写代码的话，主窗口可以先这样设计：
+
+```text
+MainUI
+
+顶部：
+Network ID
+Current User ID
+Current Username
+
+中间：
+好友列表 / 用户列表
+
+底部：
+Add User
+Save
+Logout
+```
+
+点击列表中的用户以后：
+
+```text
+UserProfileFrame
+
+User ID
+Username
+Home Town
+Work Place
+Friends Count
+
+Close
+```
+
+后面我们写代码的时候可以一步一步来：
+
+```text
+1. MainUI先显示一个空窗口
+2. MainUI显示当前用户信息
+3. MainUI显示好友列表
+4. 鼠标点击好友，弹出个人信息窗口
+5. 再考虑添加好友、删除好友、筛选好友等按钮
+```
+
+这个顺序比较舒服，不会一下子把所有功能堆在一个窗口里面，也比较符合我们现在“先把结构写清楚，再慢慢补功能”的节奏。
