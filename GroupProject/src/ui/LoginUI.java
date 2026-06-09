@@ -180,7 +180,7 @@ public class LoginUI extends JFrame {
         // 创建一个注册新社交网络和新用户的界面
         JFrame registerNetworkFrame = new JFrame("New Network");
 
-        // 设置这个登录界面的一些基础设置，大小你去自己设定，放在屏幕的中央，关闭时自动关闭等等
+        // 设置这个登录界面的一些基础设置，放在屏幕的中央，关闭时自动关闭等等
         registerNetworkFrame.setSize(460, 380);
         registerNetworkFrame.setLocationRelativeTo(this);
         registerNetworkFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
