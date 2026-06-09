@@ -4,6 +4,7 @@ import model.Network;
 import model.User;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class MainController {
 
@@ -51,6 +52,29 @@ public class MainController {
     // 按照用户ID获取用户对象
     public User getUserById(int userId) {
         return network.getUserById(userId);
+    }
+
+    // 按照用户ID获取这个用户的所有好友对象
+    public ArrayList<User> getUserFriendsList(int userId) {
+        ArrayList<User> friendsList = new ArrayList<>();
+
+        HashSet<Integer> friendIds = network.getFriendsList(userId);
+        if (friendIds == null) {
+            return friendsList;
+        }
+
+        for (int friendId : friendIds) {
+            User friend = network.getUserById(friendId);
+
+            if (friend != null) {
+                friendsList.add(friend);
+            }
+        }
+
+        // 按照用户ID从小到大排序，这样界面显示比较稳定
+        sortUsersById(friendsList);
+
+        return friendsList;
     }
 
     // 获取社交网络中所有用户的展示信息

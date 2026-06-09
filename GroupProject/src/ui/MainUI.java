@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
 public class MainUI extends JFrame {
 
@@ -244,7 +245,7 @@ public class MainUI extends JFrame {
         this.setVisible(true);
     }
 
-    // 创建用户信息窗口，显示用户的全部基础信息
+    // 创建用户信息窗口，显示用户的全部基础信息和好友信息
     private void showUserInformationWindow(User user) {
         if (user == null) {
             JOptionPane.showMessageDialog(this, "This user does not exist.");
@@ -253,7 +254,7 @@ public class MainUI extends JFrame {
 
         // 创建用户信息窗口
         JFrame userInformationFrame = new JFrame("User Information");
-        userInformationFrame.setSize(360, 260);
+        userInformationFrame.setSize(420, 460);
         userInformationFrame.setLocationRelativeTo(this);
         userInformationFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -306,6 +307,65 @@ public class MainUI extends JFrame {
         constraints.weightx = 1;
         userInformationPanel.add(friendsCountLabel, constraints);
 
+        // 添加好友列表标题
+        JLabel friendsLabel = new JLabel("Friends:");
+        friendsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        constraints.gridx = 0;
+        constraints.gridy = 5;
+        constraints.weightx = 1;
+        constraints.weighty = 0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+        userInformationPanel.add(friendsLabel, constraints);
+
+        // 创建好友列表容器
+        JPanel friendPanel = new JPanel();
+        friendPanel.setLayout(new BoxLayout(friendPanel, BoxLayout.Y_AXIS));
+
+        // 从控制器中获取这个用户的好友对象列表
+        ArrayList<User> friendsList = mainController.getUserFriendsList(user.getUserId());
+
+        // 把每一个好友的信息放进好友列表中
+        for (User friend : friendsList) {
+            int friendId = friend.getUserId();
+            String friendUsername = friend.getUsername();
+
+            String friendText = "ID: " + friendId;
+            friendText = friendText + "    Name: " + friendUsername;
+
+            JLabel friendLabel = new JLabel(friendText);
+            friendLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+
+            // 让好友信息尽量横向占满好友列表容器
+            int friendLabelHeight = friendLabel.getPreferredSize().height;
+            Dimension friendLabelSize = new Dimension(
+                    Integer.MAX_VALUE,
+                    friendLabelHeight);
+            friendLabel.setMaximumSize(friendLabelSize);
+
+            // 把好友信息放进好友列表容器
+            friendPanel.add(friendLabel);
+
+            // 在每一个好友信息之间添加一点固定空隙
+            friendPanel.add(Box.createVerticalStrut(6));
+        }
+
+        if (friendsList.isEmpty()) {
+            JLabel emptyFriendLabel = new JLabel("No friends yet.");
+            emptyFriendLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+            friendPanel.add(emptyFriendLabel);
+        }
+
+        // 给好友列表添加滚动条
+        JScrollPane friendListScrollPane = new JScrollPane(friendPanel);
+
+        // 把好友列表放进用户信息窗口
+        constraints.gridx = 0;
+        constraints.gridy = 6;
+        constraints.weightx = 1;
+        constraints.weighty = 1;
+        constraints.fill = GridBagConstraints.BOTH;
+        userInformationPanel.add(friendListScrollPane, constraints);
+
         // 创建关闭按钮
         JButton closeButton = new JButton("Close");
         closeButton.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -320,8 +380,10 @@ public class MainUI extends JFrame {
 
         // 把关闭按钮放进用户信息窗口
         constraints.gridx = 0;
-        constraints.gridy = 5;
+        constraints.gridy = 7;
         constraints.weightx = 1;
+        constraints.weighty = 0;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
         userInformationPanel.add(closeButton, constraints);
 
         userInformationFrame.add(userInformationPanel);
