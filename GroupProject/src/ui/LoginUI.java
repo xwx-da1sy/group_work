@@ -152,6 +152,12 @@ public class LoginUI extends JFrame {
                 }
 
                 JOptionPane.showMessageDialog(this, "Login successfully.");
+
+                // 登录成功之后打开主窗口
+                new MainUI();
+
+                // 关闭登录界面，彻底摧毁窗口释放占用的资源
+                this.dispose();
             } catch (NumberFormatException exception) {
                 JOptionPane.showMessageDialog(this, "User ID must be a number.");
             }
@@ -362,8 +368,14 @@ public class LoginUI extends JFrame {
                             + "First User ID: 0\n"
                             + "File: " + beginController.getFilePath());
 
-            // 关闭注册新社交网络的界面，回到登录界面，彻底摧毁窗口释放占用的资源
+            // 注册成功之后打开主窗口
+            new MainUI();
+
+            // 关闭注册新社交网络的界面，彻底摧毁窗口释放占用的资源
             registerNetworkFrame.dispose();
+
+            // 关闭登录界面，彻底摧毁窗口释放占用的资源
+            LoginUI.this.dispose();
         });
 
         // 给取消按钮绑定点击事件
