@@ -162,6 +162,31 @@ public class Network {
         return user;
     }
 
+    // 按照用户 ID 从社交网络中删除用户
+    public boolean removeUser(int userId) {
+        if (!userIdExists(userId)) {
+            return false;
+        }
+
+        if (currentUser != null && currentUser.getUserId() == userId) {
+            System.out.println("You cannot remove current user.");
+            return false;
+        }
+
+        // 删除用户之前，先把所有好友列表中保存的这个用户 ID 清理掉
+        for (User user : userNetwork.values()) {
+            user.removeFriend(userId);
+        }
+
+        // 从哈希表中删除这个用户对象
+        userNetwork.remove(userId);
+
+        // 更新总用户数
+        totalUsers = userNetwork.size();
+
+        return true;
+    }
+
 
     // ----------------------------------登录有关---------------------------------
 

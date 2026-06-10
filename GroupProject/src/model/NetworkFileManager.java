@@ -174,7 +174,7 @@ public class NetworkFileManager {
     }
 
     // 把社交网络保存到文件中
-    public void saveNetwork(Network network) {
+    public boolean saveNetwork(Network network) {
         filePath = buildNetworkFilePath(network.getNetworkId());
         createParentFolder();
 
@@ -214,15 +214,17 @@ public class NetworkFileManager {
             }
         } catch (IOException e) {
             System.out.println("Failed to save network file.");
+            return false;
         }
 
+        return true;
     }
 
     // 根据社交网络 ID 把社交网络保存到对应的文件中
-    public void saveNetwork(Network network, String networkId) {
+    public boolean saveNetwork(Network network, String networkId) {
         network.setNetworkId(networkId);
         filePath = buildNetworkFilePath(networkId);
-        saveNetwork(network);
+        return saveNetwork(network);
     }
 
     // 如果保存路径中的文件夹不存在，就先创建文件夹

@@ -1,6 +1,7 @@
 package controller;
 
 import model.Network;
+import model.NetworkFileManager;
 import model.User;
 
 import java.util.ArrayList;
@@ -9,9 +10,11 @@ import java.util.HashSet;
 public class MainController {
 
     private Network network;
+    private NetworkFileManager fileManager;
 
     public MainController(Network network) {
         this.network = network;
+        fileManager = new NetworkFileManager();
     }
 
     // 获取当前主控制器正在管理的社交网络
@@ -75,6 +78,146 @@ public class MainController {
         sortUsersById(friendsList);
 
         return friendsList;
+    }
+
+    // 把目标用户添加为当前用户的好友
+    public boolean addFriendToCurrentUser(int targetUserId) {
+        int currentUserId = network.getCurrentUser().getUserId();
+
+        if (currentUserId == targetUserId) {
+            return false;
+        }
+
+        if (network.getUserById(targetUserId) == null) {
+            return false;
+        }
+
+        if (network.getCurrentUserFriends().contains(targetUserId)) {
+            return false;
+        }
+
+        network.addEachOther(currentUserId, targetUserId);
+        return true;
+    }
+
+    // 把目标用户从当前用户的好友列表中删除
+    public boolean removeFriendFromCurrentUser(int targetUserId) {
+        int currentUserId = network.getCurrentUser().getUserId();
+
+        if (currentUserId == targetUserId) {
+            return false;
+        }
+
+        if (network.getUserById(targetUserId) == null) {
+            return false;
+        }
+
+        if (!network.getCurrentUserFriends().contains(targetUserId)) {
+            return false;
+        }
+
+        network.removeEachOther(currentUserId, targetUserId);
+        return true;
+    }
+
+    // 在当前社交网络中创建一个新的用户
+    public User createNewUser(String username, String password, String homeTown, String workPlace) {
+        if (username == null || password == null || homeTown == null || workPlace == null) {
+            return null;
+        }
+
+        if (username.isEmpty() || password.isEmpty() || homeTown.isEmpty() || workPlace.isEmpty()) {
+            return null;
+        }
+
+        return network.createUser(username, password, homeTown, workPlace);
+    }
+
+    // 从当前社交网络中删除一个用户
+    public boolean removeUserFromNetwork(int targetUserId) {
+        int currentUserId = network.getCurrentUser().getUserId();
+
+        if (currentUserId == targetUserId) {
+            return false;
+        }
+
+        if (network.getUserById(targetUserId) == null) {
+            return false;
+        }
+
+        return network.removeUser(targetUserId);
+    }
+
+    // 保存当前社交网络
+    public boolean saveCurrentNetwork() {
+        return fileManager.saveNetwork(network);
+    }
+
+    // 按照指定的信息类型筛选用户
+    public ArrayList<User> filterUsers(String keyword, String filterType) {
+        ArrayList<User> filteredUsers = new ArrayList<>();
+
+        if (keyword == null || filterType == null) {
+            return getAllUsersList();
+        }
+
+        keyword = keyword.trim();
+        if (keyword.isEmpty()) {
+            return getAllUsersList();
+        }
+
+        if (filterType.equals("ID")) {
+            try {
+                int userId = Integer.parseInt(keyword);
+                User user = network.getUserById(userId);
+
+                if (user != null) {
+                    filteredUsers.add(user);
+                }
+            } catch (NumberFormatException exception) {
+                return filteredUsers;
+            }
+        }
+
+        if (filterType.equals("Name")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User user : getAllUsersList()) {
+                String username = user.getUsername().toLowerCase();
+
+                if (username.contains(keywordForCheck)) {
+                    filteredUsers.add(user);
+                }
+            }
+        }
+
+        if (filterType.equals("Workplace")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User user : getAllUsersList()) {
+                String workPlace = user.getWorkPlace().toLowerCase();
+
+                if (workPlace.contains(keywordForCheck)) {
+                    filteredUsers.add(user);
+                }
+            }
+        }
+
+        if (filterType.equals("Hometown")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User user : getAllUsersList()) {
+                String homeTown = user.getHomeTown().toLowerCase();
+
+                if (homeTown.contains(keywordForCheck)) {
+                    filteredUsers.add(user);
+                }
+            }
+        }
+
+        sortUsersById(filteredUsers);
+
+        return filteredUsers;
     }
 
     // 获取社交网络中所有用户的展示信息
