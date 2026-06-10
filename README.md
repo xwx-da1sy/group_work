@@ -813,3 +813,251 @@ Logout
 ```
 
 但是下一步不应该一下子全写完。比较合理的顺序是先做一个最简单、最能闭环的按钮，比如`Save`或者`Logout`，然后再做添加好友和删除好友这种会影响Network数据结构的业务。
+
+## 6.10
+
+### 主窗口重新分成两个视角
+
+今天一个很重要的理解是：作业要求里面的核心其实不是“管理员查看所有用户”，而是“current user 作为一个社交网络用户，查看自己的朋友、朋友的朋友、共同好友和推荐好友”。
+
+所以我们重新分析了一下MainUI的结构，发现现在的主窗口其实有一点像“上帝视角”：
+
+```text
+显示所有用户
+添加用户
+删除用户
+添加好友
+删除好友
+保存网络
+```
+
+这些功能不是错的，因为作业的added extras里面确实提到了可以添加或删除用户。但是它们更像Network Manager，而不是普通社交用户的使用视角。
+
+所以我们没有推翻原来的MainUI，而是把它放进一个更大的左右布局里面：
+
+```text
+mainPanel(BorderLayout)
+├── NORTH: 顶部 Network ID / Current User 信息
+└── CENTER: contentPanel(GridLayout 1行2列)
+    ├── LEFT: Current User View
+    └── RIGHT: Network Manager
+```
+
+左边是当前用户视角，显示当前用户自己的资料和自己的朋友列表。右边是社交网络管理视角，显示全部用户、搜索、添加删除用户、添加删除好友、保存和退出。
+
+这个改动很关键，因为它让UI语义更加清楚：
+
+```text
+Current User View = 作业核心用户视角
+Network Manager = 额外管理功能 / 上帝视角
+```
+
+### 当前用户视角
+
+左侧区域现在叫：
+
+```text
+Current User View
+```
+
+里面显示：
+
+```text
+User ID
+Username
+Home Town
+Work Place
+Friends Count
+My Friends
+```
+
+`My Friends`列表里面的每一个好友都是按钮，点击以后会弹出这个用户的信息窗口。这个更接近作业要求里面的：
+
+```text
+display a list of all your friends
+select one of your friends to view their profile
+view their list of friends too
+```
+
+目前左侧还没有做朋友筛选、共同好友和推荐好友，这些应该是后面继续补的核心任务。
+
+### Network Manager视角
+
+右侧区域现在叫：
+
+```text
+Network Manager
+```
+
+里面显示全部用户列表，标题从`Users`改成了：
+
+```text
+All Users
+```
+
+这样它和左边的`My Friends`就不会混淆。
+
+右侧目前已经完成的功能包括：
+
+```text
+Add User
+Remove User
+Add Friend
+Remove Friend
+Save
+Logout
+Search / Filter
+Reset
+```
+
+现在底部按钮整理成了3行2列：
+
+```text
+Add User      Remove User
+Add Friend    Remove Friend
+Save          Logout
+```
+
+这个布局比之前把Logout单独放一行更紧凑，也更适合现在左右分栏之后的宽屏界面。
+
+### 搜索和筛选
+
+右侧搜索栏现在是：
+
+```text
+Search / Filter: [__________] [Name ▼] [Search] [Reset]
+```
+
+下拉框目前支持：
+
+```text
+ID
+Name
+Workplace
+Hometown
+```
+
+搜索逻辑放在MainController里面：
+
+```text
+filterUsers(keyword, filterType)
+```
+
+现在的规则是：
+
+```text
+ID = 精确匹配用户ID
+Name = 用户名包含匹配
+Workplace = 工作地点包含匹配
+Hometown = 家乡包含匹配
+```
+
+点击`Search`之后，MainUI会重新刷新右侧`All Users`列表。点击`Reset`之后，会清空输入框，把下拉框恢复到`Name`，并重新显示所有用户。
+
+这里也再次明确了ArrayList的作用：筛选结果返回`ArrayList<User>`，方便UI按顺序展示；底层真正查找用户仍然依赖Network里面的`HashMap<Integer, User>`。
+
+### 按钮业务完成情况
+
+目前MainUI里面比较基础的按钮业务已经基本打通：
+
+```text
+Add User:
+弹出窗口输入 username / password / hometown / workplace
+调用 MainController.createNewUser(...)
+Network 自动生成新的 userId
+创建成功后刷新主窗口
+
+Remove User:
+弹出窗口输入 userId
+不能删除 currentUser
+删除用户时会从所有人的好友列表里面清理这个 userId
+删除成功后刷新主窗口
+
+Add Friend:
+弹出窗口输入目标 userId
+调用 MainController.addFriendToCurrentUser(...)
+底层调用 Network.addEachOther(...)
+
+Remove Friend:
+弹出窗口输入目标 userId
+调用 MainController.removeFriendFromCurrentUser(...)
+底层调用 Network.removeEachOther(...)
+
+Save:
+调用 NetworkFileManager.saveNetwork(network)
+保存到 data/network-ID.txt
+
+Logout:
+弹出确认框
+确认后关闭 MainUI
+重新打开 LoginUI
+```
+
+这些功能都不是自动保存。也就是说，用户修改了网络以后，如果想写入文件，需要点击`Save`。这样Save按钮的职责更清楚。
+
+### UI布局记录
+
+现在MainUI里面使用的布局大概是：
+
+```text
+最外层 mainPanel: BorderLayout
+顶部 topPanel: GridLayout(2, 1)
+左右 contentPanel: GridLayout(1, 2, 16, 0)
+
+左侧 currentUserPanel: BorderLayout
+当前用户资料: GridLayout(5, 1)
+当前用户好友列表: BoxLayout.Y_AXIS + JScrollPane
+
+右侧 networkManagerPanel: BorderLayout
+搜索和全部用户列表: GridBagLayout
+全部用户按钮列表: BoxLayout.Y_AXIS + JScrollPane
+底部按钮: GridLayout(3, 2, 8, 8)
+```
+
+左右两个主区域都加了`TitledBorder`，也就是Swing里面的带标题边框。这个边框不是一个单独的组件，而是设置在JPanel上的Border对象。
+
+现在的窗口大小也从之前的竖屏通讯录风格改成：
+
+```text
+960 x 720
+```
+
+因为现在主窗口已经从一个列表扩展成左右两个视角，如果继续使用原来的窄窗口就会很拥挤。
+
+### 当前完成度判断
+
+现在项目的大体框架已经差不多完成了。比较重要的基础能力已经有了：
+
+```text
+User / Network / NetworkFileManager / Controller / UI 的基本分工
+HashMap<Integer, User> 保存用户
+HashSet<Integer> 保存好友ID
+txt文件读取和保存
+登录已有社交网络
+注册新社交网络
+MainUI左右双视角
+用户增删
+好友增删
+保存和退出
+右侧全部用户筛选
+点击用户查看资料和朋友列表
+```
+
+但是如果严格按照作业要求来看，还不能说完全结束。后面最需要补的是current user视角下的社交网络查询功能：
+
+```text
+1. 筛选当前用户自己的朋友，例如同家乡、同工作地点
+2. 查看某个朋友的朋友时，筛选共同好友
+3. 好友推荐：从朋友的朋友里面找同家乡或同工作地点、并且还不是当前用户好友的人
+4. 更完整的测试记录和README / report说明
+```
+
+所以现在可以说：
+
+```text
+基础MVC框架和主要UI框架已经基本完成。
+上帝视角 / Network Manager的基础功能已经比较完整。
+下一阶段重点应该回到作业核心：Current User View里面的朋友筛选、共同好友和好友推荐。
+```
+
+这也说明前面最难的地方已经过去了。现在剩下的任务会更像是在稳定框架上继续补功能，而不是重新思考整个系统怎么搭起来。

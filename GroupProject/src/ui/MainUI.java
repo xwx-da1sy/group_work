@@ -4,6 +4,7 @@ import controller.MainController;
 import model.User;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -19,7 +20,7 @@ public class MainUI extends JFrame {
         this.mainController = mainController;
 
         this.setTitle("Social Network");
-        this.setSize(520, 720);
+        this.setSize(960, 720);
         this.setLocationRelativeTo(null);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -58,11 +59,40 @@ public class MainUI extends JFrame {
         // 把顶部区域放进主容器的上方
         mainPanel.add(topPanel, BorderLayout.NORTH);
 
+        // ---------------------------主要内容区域组件----------------------
+
+        // 创建主要内容区域，用来左右摆放当前用户视角和社交网络管理视角
+        JPanel contentPanel = new JPanel(new GridLayout(1, 2, 16, 0));
+
+        // 创建当前用户视角区域
+        JPanel currentUserPanel = createCurrentUserPanel();
+
+        // 创建社交网络管理视角区域
+        JPanel networkManagerPanel = new JPanel(new BorderLayout(0, 12));
+        TitledBorder networkManagerBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "Network Manager",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 15));
+        networkManagerPanel.setBorder(BorderFactory.createCompoundBorder(
+                networkManagerBorder,
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)));
+
+        // 把当前用户视角区域放在左边
+        contentPanel.add(currentUserPanel);
+
+        // 把社交网络管理视角区域放在右边
+        contentPanel.add(networkManagerPanel);
+
+        // 把主要内容区域放进主容器中间
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+
         // ---------------------------中部区域组件----------------------
 
         // 创建中间区域，用来放搜索框和好友列表
         JPanel centerPanel = new JPanel(new BorderLayout());
-        mainPanel.add(centerPanel, BorderLayout.CENTER);
+        networkManagerPanel.add(centerPanel, BorderLayout.CENTER);
         JPanel userNetworkPanel = new JPanel(new GridBagLayout());
 
         // 添加布局约束器
@@ -131,15 +161,30 @@ public class MainUI extends JFrame {
         gridBagConstraintsOfCenter.anchor = GridBagConstraints.WEST;
         userNetworkPanel.add(searchButton, gridBagConstraintsOfCenter);
 
+        // 添加重置按钮
+        JButton resetButton = new JButton("Reset");
+        resetButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        resetButton.setFocusPainted(false);
+
+        // 把重置按钮放在4,0的位置，不进行水平拉伸
+        gridBagConstraintsOfCenter.gridx = 4;
+        gridBagConstraintsOfCenter.gridy = 0;
+        gridBagConstraintsOfCenter.weightx = 0;
+        gridBagConstraintsOfCenter.weighty = 0;
+        gridBagConstraintsOfCenter.gridwidth = 1;
+        gridBagConstraintsOfCenter.fill = GridBagConstraints.HORIZONTAL;
+        gridBagConstraintsOfCenter.anchor = GridBagConstraints.WEST;
+        userNetworkPanel.add(resetButton, gridBagConstraintsOfCenter);
+
         //添加用户列表标签，我不想水平拉伸但是想要居中摆放
-        JLabel usersLabel = new JLabel("Users");
+        JLabel usersLabel = new JLabel("All Users");
         usersLabel.setFont(new Font("Arial", Font.BOLD, 16));
 
         gridBagConstraintsOfCenter.gridx = 0;
         gridBagConstraintsOfCenter.gridy = 1;
         gridBagConstraintsOfCenter.weightx = 1;
         gridBagConstraintsOfCenter.weighty = 0;
-        gridBagConstraintsOfCenter.gridwidth = 4;
+        gridBagConstraintsOfCenter.gridwidth = 5;
         gridBagConstraintsOfCenter.fill = GridBagConstraints.NONE;
         gridBagConstraintsOfCenter.anchor = GridBagConstraints.CENTER;
         userNetworkPanel.add(usersLabel, gridBagConstraintsOfCenter);
@@ -163,6 +208,15 @@ public class MainUI extends JFrame {
             }
         });
 
+        // 给重置按钮绑定点击事件
+        resetButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                searchTextField.setText("");
+                searchTypeComboBox.setSelectedItem("Name");
+                refreshUserButtonList(mainController.getAllUsersList());
+            }
+        });
+
         // 在右边添加一个滚动条
         JScrollPane userListScrollPane = new JScrollPane(userButtonPanel);
 
@@ -170,7 +224,7 @@ public class MainUI extends JFrame {
         gridBagConstraintsOfCenter.gridy = 2;
         gridBagConstraintsOfCenter.weightx = 1;
         gridBagConstraintsOfCenter.weighty = 1;
-        gridBagConstraintsOfCenter.gridwidth = 4;
+        gridBagConstraintsOfCenter.gridwidth = 5;
         gridBagConstraintsOfCenter.fill = GridBagConstraints.BOTH;
         gridBagConstraintsOfCenter.anchor = GridBagConstraints.CENTER;
         userNetworkPanel.add(userListScrollPane, gridBagConstraintsOfCenter);
@@ -186,7 +240,7 @@ public class MainUI extends JFrame {
         bottomPanel.setLayout(new BoxLayout(bottomPanel, BoxLayout.Y_AXIS));
         // 给底部区域添加一点上边距，让按钮不要紧贴中间列表
         bottomPanel.setBorder(BorderFactory.createEmptyBorder(12, 0, 0, 0));
-        mainPanel.add(bottomPanel, BorderLayout.SOUTH);
+        networkManagerPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         // 创建底部按钮区域，用GridLayout保证左右按钮一样长
         JPanel bottomButtonPanel = new JPanel(new GridLayout(3, 2, 8, 8));
@@ -308,6 +362,118 @@ public class MainUI extends JFrame {
 
         // 将窗口设置为可见，这一步一定是在最后完成。
         this.setVisible(true);
+    }
+
+    // 创建当前用户视角区域
+    private JPanel createCurrentUserPanel() {
+        JPanel currentUserPanel = new JPanel(new BorderLayout(0, 12));
+        TitledBorder currentUserBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createEtchedBorder(),
+                "Current User View",
+                TitledBorder.LEFT,
+                TitledBorder.TOP,
+                new Font("Arial", Font.BOLD, 15));
+        currentUserPanel.setBorder(BorderFactory.createCompoundBorder(
+                currentUserBorder,
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)));
+
+        // 创建当前用户上方区域，用来摆放标题和基础信息
+        JPanel currentUserTopPanel = new JPanel(new BorderLayout(0, 8));
+
+        // 创建当前用户信息区域
+        JPanel currentUserInformationPanel = new JPanel(new GridLayout(5, 1, 0, 6));
+
+        User currentUser = mainController.getUserById(mainController.getCurrentUserId());
+
+        // 添加当前用户ID信息
+        JLabel userIdLabel = new JLabel("User ID: " + currentUser.getUserId());
+        userIdLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        currentUserInformationPanel.add(userIdLabel);
+
+        // 添加当前用户名信息
+        JLabel usernameLabel = new JLabel("Username: " + currentUser.getUsername());
+        usernameLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        currentUserInformationPanel.add(usernameLabel);
+
+        // 添加当前用户家乡信息
+        JLabel homeTownLabel = new JLabel("Home Town: " + currentUser.getHomeTown());
+        homeTownLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        currentUserInformationPanel.add(homeTownLabel);
+
+        // 添加当前用户工作地点信息
+        JLabel workPlaceLabel = new JLabel("Work Place: " + currentUser.getWorkPlace());
+        workPlaceLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        currentUserInformationPanel.add(workPlaceLabel);
+
+        // 添加当前用户好友数量信息
+        JLabel friendsCountLabel = new JLabel("Friends Count: " + currentUser.getFriends().size());
+        friendsCountLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+        currentUserInformationPanel.add(friendsCountLabel);
+
+        // 把当前用户信息区域放进当前用户上方区域
+        currentUserTopPanel.add(currentUserInformationPanel, BorderLayout.CENTER);
+
+        // 把当前用户上方区域放进当前用户视角区域
+        currentUserPanel.add(currentUserTopPanel, BorderLayout.NORTH);
+
+        // 创建当前用户好友区域
+        JPanel currentFriendPanel = new JPanel();
+        currentFriendPanel.setLayout(new BoxLayout(currentFriendPanel, BoxLayout.Y_AXIS));
+
+        ArrayList<User> friendsList = mainController.getUserFriendsList(currentUser.getUserId());
+
+        // 把当前用户的每一个好友做成按钮
+        for (User friend : friendsList) {
+            int friendId = friend.getUserId();
+            String friendUsername = friend.getUsername();
+
+            String friendButtonText = "ID: " + friendId;
+            friendButtonText = friendButtonText + "    Name: " + friendUsername;
+
+            JButton friendButton = new JButton(friendButtonText);
+            friendButton.setFont(new Font("Arial", Font.PLAIN, 13));
+            friendButton.setFocusPainted(false);
+
+            // 给好友按钮绑定点击事件
+            friendButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    User selectedFriend = mainController.getUserById(friendId);
+                    showUserInformationWindow(selectedFriend);
+                }
+            });
+
+            // 让好友按钮尽量横向占满好友列表容器
+            int friendButtonHeight = friendButton.getPreferredSize().height;
+            Dimension friendButtonSize = new Dimension(
+                    Integer.MAX_VALUE,
+                    friendButtonHeight);
+            friendButton.setMaximumSize(friendButtonSize);
+
+            currentFriendPanel.add(friendButton);
+            currentFriendPanel.add(Box.createVerticalStrut(6));
+        }
+
+        if (friendsList.isEmpty()) {
+            JLabel emptyFriendLabel = new JLabel("No friends yet.");
+            emptyFriendLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+            currentFriendPanel.add(emptyFriendLabel);
+        }
+
+        // 给当前用户好友列表添加滚动条
+        JScrollPane currentFriendScrollPane = new JScrollPane(currentFriendPanel);
+
+        // 创建当前用户好友列表外层容器
+        JPanel currentFriendContainer = new JPanel(new BorderLayout(0, 8));
+
+        JLabel currentFriendLabel = new JLabel("My Friends");
+        currentFriendLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        currentFriendContainer.add(currentFriendLabel, BorderLayout.NORTH);
+        currentFriendContainer.add(currentFriendScrollPane, BorderLayout.CENTER);
+
+        // 把当前用户好友列表放进当前用户视角区域
+        currentUserPanel.add(currentFriendContainer, BorderLayout.CENTER);
+
+        return currentUserPanel;
     }
 
     // 刷新用户按钮列表
