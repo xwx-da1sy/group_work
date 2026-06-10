@@ -14,6 +14,7 @@ public class MainUI extends JFrame {
 
     private MainController mainController;
     private JPanel userButtonPanel;
+    private JPanel currentFriendPanel;
 
     // 创建主窗口
     public MainUI(MainController mainController) {
@@ -417,13 +418,133 @@ public class MainUI extends JFrame {
         currentUserPanel.add(currentUserTopPanel, BorderLayout.NORTH);
 
         // 创建当前用户好友区域
-        JPanel currentFriendPanel = new JPanel();
+        currentFriendPanel = new JPanel();
         currentFriendPanel.setLayout(new BoxLayout(currentFriendPanel, BoxLayout.Y_AXIS));
 
         ArrayList<User> friendsList = mainController.getUserFriendsList(currentUser.getUserId());
 
+        // 根据当前用户的好友列表，刷新好友按钮列表
+        refreshCurrentFriendList(friendsList);
+
+        // 给当前用户好友列表添加滚动条
+        JScrollPane currentFriendScrollPane = new JScrollPane(currentFriendPanel);
+
+        // 创建当前用户好友列表外层容器
+        JPanel currentFriendContainer = new JPanel(new BorderLayout(0, 8));
+
+        // 创建好友列表上方区域，用来摆放标题和筛选工具
+        JPanel friendTopPanel = new JPanel(new BorderLayout(0, 6));
+
+        JLabel currentFriendLabel = new JLabel("My Friends");
+        currentFriendLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        friendTopPanel.add(currentFriendLabel, BorderLayout.NORTH);
+
+        // 创建好友筛选区域
+        JPanel friendFilterPanel = new JPanel(new GridBagLayout());
+
+        // 创建好友筛选区域的布局约束对象
+        GridBagConstraints friendFilterConstraints = new GridBagConstraints();
+        friendFilterConstraints.insets = new Insets(0, 0, 5, 5);
+        friendFilterConstraints.fill = GridBagConstraints.HORIZONTAL;
+
+        // 添加好友筛选标签
+        JLabel friendFilterLabel = new JLabel("Filter:");
+        friendFilterLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        friendFilterConstraints.gridx = 0;
+        friendFilterConstraints.gridy = 0;
+        friendFilterConstraints.weightx = 0;
+        friendFilterConstraints.weighty = 0;
+        friendFilterConstraints.gridwidth = 1;
+        friendFilterPanel.add(friendFilterLabel, friendFilterConstraints);
+
+        // 添加好友筛选输入框
+        JTextField friendFilterTextField = new JTextField();
+        friendFilterTextField.setFont(new Font("Arial", Font.PLAIN, 14));
+        friendFilterConstraints.gridx = 1;
+        friendFilterConstraints.gridy = 0;
+        friendFilterConstraints.weightx = 1;
+        friendFilterConstraints.weighty = 0;
+        friendFilterConstraints.gridwidth = 1;
+        friendFilterPanel.add(friendFilterTextField, friendFilterConstraints);
+
+        // 添加好友筛选类型下拉框
+        JComboBox<String> friendFilterComboBox = new JComboBox<>();
+        friendFilterComboBox.addItem("Name");
+        friendFilterComboBox.addItem("ID");
+        friendFilterComboBox.addItem("Workplace");
+        friendFilterComboBox.addItem("Hometown");
+        friendFilterComboBox.setFont(new Font("Arial", Font.PLAIN, 14));
+        friendFilterConstraints.gridx = 2;
+        friendFilterConstraints.gridy = 0;
+        friendFilterConstraints.weightx = 0;
+        friendFilterConstraints.weighty = 0;
+        friendFilterConstraints.gridwidth = 1;
+        friendFilterPanel.add(friendFilterComboBox, friendFilterConstraints);
+
+        // 添加好友筛选搜索按钮
+        JButton friendSearchButton = new JButton("Search");
+        friendSearchButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        friendSearchButton.setFocusPainted(false);
+        friendFilterConstraints.gridx = 3;
+        friendFilterConstraints.gridy = 0;
+        friendFilterConstraints.weightx = 0;
+        friendFilterConstraints.weighty = 0;
+        friendFilterConstraints.gridwidth = 1;
+        friendFilterPanel.add(friendSearchButton, friendFilterConstraints);
+
+        // 添加好友筛选重置按钮
+        JButton friendResetButton = new JButton("Reset");
+        friendResetButton.setFont(new Font("Arial", Font.PLAIN, 14));
+        friendResetButton.setFocusPainted(false);
+        friendFilterConstraints.gridx = 4;
+        friendFilterConstraints.gridy = 0;
+        friendFilterConstraints.weightx = 0;
+        friendFilterConstraints.weighty = 0;
+        friendFilterConstraints.gridwidth = 1;
+        friendFilterPanel.add(friendResetButton, friendFilterConstraints);
+
+        // 把好友筛选区域放进好友列表上方区域
+        friendTopPanel.add(friendFilterPanel, BorderLayout.CENTER);
+
+        // 给好友筛选搜索按钮绑定点击事件
+        friendSearchButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String keyword = friendFilterTextField.getText();
+                String filterType = (String) friendFilterComboBox.getSelectedItem();
+
+                ArrayList<User> filteredFriends = mainController.filterCurrentUserFriends(
+                        keyword,
+                        filterType);
+                refreshCurrentFriendList(filteredFriends);
+            }
+        });
+
+        // 给好友筛选重置按钮绑定点击事件
+        friendResetButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                friendFilterTextField.setText("");
+                friendFilterComboBox.setSelectedItem("Name");
+                refreshCurrentFriendList(mainController.getUserFriendsList(mainController.getCurrentUserId()));
+            }
+        });
+
+        // 把好友列表上方区域放进当前用户好友列表外层容器
+        currentFriendContainer.add(friendTopPanel, BorderLayout.NORTH);
+
+        currentFriendContainer.add(currentFriendScrollPane, BorderLayout.CENTER);
+
+        // 把当前用户好友列表放进当前用户视角区域
+        currentUserPanel.add(currentFriendContainer, BorderLayout.CENTER);
+
+        return currentUserPanel;
+    }
+
+    // 刷新当前用户好友按钮列表
+    private void refreshCurrentFriendList(ArrayList<User> friends) {
+        currentFriendPanel.removeAll();
+
         // 把当前用户的每一个好友做成按钮
-        for (User friend : friendsList) {
+        for (User friend : friends) {
             int friendId = friend.getUserId();
             String friendUsername = friend.getUsername();
 
@@ -449,31 +570,22 @@ public class MainUI extends JFrame {
                     friendButtonHeight);
             friendButton.setMaximumSize(friendButtonSize);
 
+            // 把好友按钮放进当前用户好友列表容器
             currentFriendPanel.add(friendButton);
+
+            // 在每一个好友按钮之间添加一点固定空隙
             currentFriendPanel.add(Box.createVerticalStrut(6));
         }
 
-        if (friendsList.isEmpty()) {
-            JLabel emptyFriendLabel = new JLabel("No friends yet.");
+        if (friends.isEmpty()) {
+            JLabel emptyFriendLabel = new JLabel("No friends found.");
             emptyFriendLabel.setFont(new Font("Arial", Font.PLAIN, 14));
             currentFriendPanel.add(emptyFriendLabel);
         }
 
-        // 给当前用户好友列表添加滚动条
-        JScrollPane currentFriendScrollPane = new JScrollPane(currentFriendPanel);
-
-        // 创建当前用户好友列表外层容器
-        JPanel currentFriendContainer = new JPanel(new BorderLayout(0, 8));
-
-        JLabel currentFriendLabel = new JLabel("My Friends");
-        currentFriendLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        currentFriendContainer.add(currentFriendLabel, BorderLayout.NORTH);
-        currentFriendContainer.add(currentFriendScrollPane, BorderLayout.CENTER);
-
-        // 把当前用户好友列表放进当前用户视角区域
-        currentUserPanel.add(currentFriendContainer, BorderLayout.CENTER);
-
-        return currentUserPanel;
+        // 重新计算和重新绘制当前用户好友列表
+        currentFriendPanel.revalidate();
+        currentFriendPanel.repaint();
     }
 
     // 刷新用户按钮列表

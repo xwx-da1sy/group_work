@@ -220,6 +220,76 @@ public class MainController {
         return filteredUsers;
     }
 
+    // 按照指定的信息类型筛选当前用户的好友
+    public ArrayList<User> filterCurrentUserFriends(String keyword, String filterType) {
+        ArrayList<User> filteredFriends = new ArrayList<>();
+
+        if (keyword == null || filterType == null) {
+            return getUserFriendsList(getCurrentUserId());
+        }
+
+        keyword = keyword.trim();
+        if (keyword.isEmpty()) {
+            return getUserFriendsList(getCurrentUserId());
+        }
+
+        ArrayList<User> friendsList = getUserFriendsList(getCurrentUserId());
+
+        if (filterType.equals("ID")) {
+            try {
+                int userId = Integer.parseInt(keyword);
+
+                for (User friend : friendsList) {
+                    if (friend.getUserId() == userId) {
+                        filteredFriends.add(friend);
+                    }
+                }
+            } catch (NumberFormatException exception) {
+                return filteredFriends;
+            }
+        }
+
+        if (filterType.equals("Name")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User friend : friendsList) {
+                String username = friend.getUsername().toLowerCase();
+
+                if (username.contains(keywordForCheck)) {
+                    filteredFriends.add(friend);
+                }
+            }
+        }
+
+        if (filterType.equals("Workplace")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User friend : friendsList) {
+                String workPlace = friend.getWorkPlace().toLowerCase();
+
+                if (workPlace.contains(keywordForCheck)) {
+                    filteredFriends.add(friend);
+                }
+            }
+        }
+
+        if (filterType.equals("Hometown")) {
+            String keywordForCheck = keyword.toLowerCase();
+
+            for (User friend : friendsList) {
+                String homeTown = friend.getHomeTown().toLowerCase();
+
+                if (homeTown.contains(keywordForCheck)) {
+                    filteredFriends.add(friend);
+                }
+            }
+        }
+
+        sortUsersById(filteredFriends);
+
+        return filteredFriends;
+    }
+
     // 获取社交网络中所有用户的展示信息
     public ArrayList<String> getAllUserInformationList() {
         ArrayList<User> users = getAllUsersList();
