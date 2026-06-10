@@ -536,7 +536,100 @@ public class MainUI extends JFrame {
         // 把当前用户好友列表放进当前用户视角区域
         currentUserPanel.add(currentFriendContainer, BorderLayout.CENTER);
 
+        // 创建好友推荐区域
+        JPanel friendRecommendationPanel = createFriendRecommendationPanel();
+
+        // 把好友推荐区域放进当前用户视角区域
+        currentUserPanel.add(friendRecommendationPanel, BorderLayout.SOUTH);
+
         return currentUserPanel;
+    }
+
+    // 创建好友推荐区域
+    private JPanel createFriendRecommendationPanel() {
+        JPanel friendRecommendationContainer = new JPanel(new BorderLayout(0, 8));
+
+        // 创建好友推荐标题
+        JLabel friendRecommendationLabel = new JLabel("Friend Recommendations");
+        friendRecommendationLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        friendRecommendationContainer.add(friendRecommendationLabel, BorderLayout.NORTH);
+
+        // 创建好友推荐列表容器
+        JPanel friendRecommendationListPanel = new JPanel();
+        friendRecommendationListPanel.setLayout(new BoxLayout(friendRecommendationListPanel, BoxLayout.Y_AXIS));
+
+        ArrayList<User> recommendedFriends = mainController.getFriendRecommendationsForCurrentUser();
+
+        // 把每一个推荐好友的信息和添加好友按钮放进推荐好友列表中
+        for (User recommendedFriend : recommendedFriends) {
+            int recommendedFriendId = recommendedFriend.getUserId();
+            String recommendedFriendUsername = recommendedFriend.getUsername();
+
+            String recommendedFriendText = "ID: " + recommendedFriendId;
+            recommendedFriendText = recommendedFriendText + "    Name: " + recommendedFriendUsername;
+
+            // 创建单个推荐好友信息行
+            JPanel recommendationRowPanel = new JPanel(new BorderLayout(8, 0));
+
+            JLabel recommendationLabel = new JLabel(recommendedFriendText);
+            recommendationLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+
+            // 创建添加好友按钮
+            JButton addFriendButton = new JButton("Add Friend");
+            addFriendButton.setFont(new Font("Arial", Font.PLAIN, 12));
+            addFriendButton.setFocusPainted(false);
+
+            // 给添加好友按钮绑定点击事件
+            addFriendButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    boolean isAdded = mainController.addFriendToCurrentUser(recommendedFriendId);
+
+                    if (isAdded) {
+                        JOptionPane.showMessageDialog(MainUI.this, "Friend added successfully.");
+
+                        // 添加成功之后刷新主窗口，让好友列表和推荐列表同步更新
+                        MainUI.this.dispose();
+                        new MainUI(mainController);
+                    } else {
+                        JOptionPane.showMessageDialog(MainUI.this, "Failed to add friend.");
+                    }
+                }
+            });
+
+            // 把推荐好友信息放在推荐好友信息行的左边
+            recommendationRowPanel.add(recommendationLabel, BorderLayout.CENTER);
+
+            // 把添加好友按钮放在推荐好友信息行的右边
+            recommendationRowPanel.add(addFriendButton, BorderLayout.EAST);
+
+            // 让推荐好友信息行尽量横向占满推荐好友列表容器
+            int recommendationRowHeight = recommendationRowPanel.getPreferredSize().height;
+            Dimension recommendationRowSize = new Dimension(
+                    Integer.MAX_VALUE,
+                    recommendationRowHeight);
+            recommendationRowPanel.setMaximumSize(recommendationRowSize);
+
+            // 把推荐好友信息行放进推荐好友列表容器
+            friendRecommendationListPanel.add(recommendationRowPanel);
+
+            // 在每一个推荐好友信息行之间添加一点固定空隙
+            friendRecommendationListPanel.add(Box.createVerticalStrut(6));
+        }
+
+        if (recommendedFriends.isEmpty()) {
+            JLabel emptyRecommendationLabel = new JLabel("No recommendations yet.");
+            emptyRecommendationLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+            friendRecommendationListPanel.add(emptyRecommendationLabel);
+        }
+
+        // 给好友推荐列表添加滚动条
+        JScrollPane friendRecommendationScrollPane = new JScrollPane(friendRecommendationListPanel);
+        friendRecommendationScrollPane.setPreferredSize(new Dimension(100, 120));
+
+        // 把好友推荐列表放进好友推荐区域
+        friendRecommendationContainer.add(friendRecommendationScrollPane, BorderLayout.CENTER);
+
+        return friendRecommendationContainer;
     }
 
     // 刷新当前用户好友按钮列表
@@ -1057,7 +1150,7 @@ public class MainUI extends JFrame {
 
         // 创建用户信息窗口
         JFrame userInformationFrame = new JFrame("User Information");
-        userInformationFrame.setSize(420, 460);
+        userInformationFrame.setSize(460, 620);
         userInformationFrame.setLocationRelativeTo(this);
         userInformationFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -1190,6 +1283,71 @@ public class MainUI extends JFrame {
         constraints.fill = GridBagConstraints.BOTH;
         userInformationPanel.add(friendListScrollPane, constraints);
 
+        int closeButtonGridY = 7;
+
+        if (user.getUserId() != mainController.getCurrentUserId()) {
+            // 添加共同好友列表标题
+            JLabel commonFriendsLabel = new JLabel("Common Friends with Current User:");
+            commonFriendsLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            constraints.gridx = 0;
+            constraints.gridy = 7;
+            constraints.weightx = 1;
+            constraints.weighty = 0;
+            constraints.fill = GridBagConstraints.HORIZONTAL;
+            userInformationPanel.add(commonFriendsLabel, constraints);
+
+            // 创建共同好友列表容器
+            JPanel commonFriendPanel = new JPanel();
+            commonFriendPanel.setLayout(new BoxLayout(commonFriendPanel, BoxLayout.Y_AXIS));
+
+            // 从控制器中获取共同好友对象列表
+            ArrayList<User> commonFriends = mainController.getCommonFriendsWithCurrentUser(user.getUserId());
+
+            // 把每一个共同好友的信息放进共同好友列表中
+            for (User commonFriend : commonFriends) {
+                int commonFriendId = commonFriend.getUserId();
+                String commonFriendUsername = commonFriend.getUsername();
+
+                String commonFriendText = "ID: " + commonFriendId;
+                commonFriendText = commonFriendText + "    Name: " + commonFriendUsername;
+
+                JLabel commonFriendInformationLabel = new JLabel(commonFriendText);
+                commonFriendInformationLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+
+                // 让共同好友信息尽量横向占满共同好友列表容器
+                int commonFriendLabelHeight = commonFriendInformationLabel.getPreferredSize().height;
+                Dimension commonFriendLabelSize = new Dimension(
+                        Integer.MAX_VALUE,
+                        commonFriendLabelHeight);
+                commonFriendInformationLabel.setMaximumSize(commonFriendLabelSize);
+
+                // 把共同好友信息放进共同好友列表容器
+                commonFriendPanel.add(commonFriendInformationLabel);
+
+                // 在每一个共同好友信息之间添加一点固定空隙
+                commonFriendPanel.add(Box.createVerticalStrut(6));
+            }
+
+            if (commonFriends.isEmpty()) {
+                JLabel emptyCommonFriendLabel = new JLabel("No common friends.");
+                emptyCommonFriendLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+                commonFriendPanel.add(emptyCommonFriendLabel);
+            }
+
+            // 给共同好友列表添加滚动条
+            JScrollPane commonFriendScrollPane = new JScrollPane(commonFriendPanel);
+
+            // 把共同好友列表放进用户信息窗口
+            constraints.gridx = 0;
+            constraints.gridy = 8;
+            constraints.weightx = 1;
+            constraints.weighty = 1;
+            constraints.fill = GridBagConstraints.BOTH;
+            userInformationPanel.add(commonFriendScrollPane, constraints);
+
+            closeButtonGridY = 9;
+        }
+
         // 创建关闭按钮
         JButton closeButton = new JButton("Close");
         closeButton.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -1204,7 +1362,7 @@ public class MainUI extends JFrame {
 
         // 把关闭按钮放进用户信息窗口
         constraints.gridx = 0;
-        constraints.gridy = 7;
+        constraints.gridy = closeButtonGridY;
         constraints.weightx = 1;
         constraints.weighty = 0;
         constraints.fill = GridBagConstraints.HORIZONTAL;

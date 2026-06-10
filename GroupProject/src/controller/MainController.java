@@ -290,6 +290,76 @@ public class MainController {
         return filteredFriends;
     }
 
+    // 获取目标用户和当前用户的共同好友
+    public ArrayList<User> getCommonFriendsWithCurrentUser(int targetUserId) {
+        ArrayList<User> commonFriends = new ArrayList<>();
+
+        int currentUserId = getCurrentUserId();
+
+        if (currentUserId == targetUserId) {
+            return commonFriends;
+        }
+
+        if (network.getUserById(targetUserId) == null) {
+            return commonFriends;
+        }
+
+        HashSet<Integer> currentUserFriends = network.getFriendsList(currentUserId);
+        HashSet<Integer> targetUserFriends = network.getFriendsList(targetUserId);
+
+        if (currentUserFriends == null || targetUserFriends == null) {
+            return commonFriends;
+        }
+
+        for (int friendId : currentUserFriends) {
+            if (targetUserFriends.contains(friendId)) {
+                User commonFriend = network.getUserById(friendId);
+
+                if (commonFriend != null) {
+                    commonFriends.add(commonFriend);
+                }
+            }
+        }
+
+        // 按照用户ID从小到大排序，这样界面显示比较稳定
+        sortUsersById(commonFriends);
+
+        return commonFriends;
+    }
+
+    // 获取当前用户的好友推荐列表
+    public ArrayList<User> getFriendRecommendationsForCurrentUser() {
+        ArrayList<User> recommendedFriends = new ArrayList<>();
+        HashSet<Integer> recommendedFriendIds = new HashSet<>();
+
+        HashSet<Integer> sameWorkPlaceFriends = network.filterFriendsOfFriendsBySameWorkPlace();
+        HashSet<Integer> sameHomeTownFriends = network.filterFriendsOfFriendsBySameHomeTown();
+
+        // 把同工作地点的朋友的朋友加入推荐集合
+        for (int userId : sameWorkPlaceFriends) {
+            recommendedFriendIds.add(userId);
+        }
+
+        // 把同家乡的朋友的朋友加入推荐集合
+        for (int userId : sameHomeTownFriends) {
+            recommendedFriendIds.add(userId);
+        }
+
+        // 按照ID从哈希表中提取用户对象，方便UI展示
+        for (int userId : recommendedFriendIds) {
+            User recommendedFriend = network.getUserById(userId);
+
+            if (recommendedFriend != null) {
+                recommendedFriends.add(recommendedFriend);
+            }
+        }
+
+        // 按照用户ID从小到大排序，这样界面显示比较稳定
+        sortUsersById(recommendedFriends);
+
+        return recommendedFriends;
+    }
+
     // 获取社交网络中所有用户的展示信息
     public ArrayList<String> getAllUserInformationList() {
         ArrayList<User> users = getAllUsersList();
