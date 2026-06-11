@@ -132,6 +132,11 @@ public class Network {
             return;
         }
 
+        if (user.getUserId() < 0 || user.getUserId() >= MAX_USERS) {
+            System.out.println("Invalid user ID.");
+            return;
+        }
+
         // 检查社交网络中是否已经有重复的用户 ID
         if (userNetwork.containsKey(user.getUserId())) {
             System.out.println("This user ID already exists.");
@@ -141,9 +146,9 @@ public class Network {
         // 把 User 对象放进哈希表中，userId 是 key，User 对象是 value
         userNetwork.put(user.getUserId(), user);
 
-        // 更新总用户数和下一个用户 ID
+        // 更新总用户数和下一个可用用户 ID
         totalUsers = userNetwork.size();
-        nextUserId = Math.max(nextUserId, user.getUserId() + 1);
+        nextUserId = findAvailableUserId();
 
         if (currentUser == null && user.getUserId() == 0) {
             currentUser = user;
@@ -152,14 +157,25 @@ public class Network {
 
     // 这个方法先创建一个用户，然后把用户添加到哈希表中
     public User createUser(String username, String password, String homeTown, String workPlace) {
-        if (nextUserId >= MAX_USERS) {
+        int userId = findAvailableUserId();
+        if (userId == -1) {
             System.out.println("The network is full.");
             return null;
         }
 
-        User user = new User(username, password, homeTown, workPlace, nextUserId);
+        User user = new User(username, password, homeTown, workPlace, userId);
         addUser(user);
         return user;
+    }
+
+    // 返回当前网络中最小的可用用户 ID，如果已满则返回 -1
+    private int findAvailableUserId() {
+        for (int id = 0; id < MAX_USERS; id++) {
+            if (!userNetwork.containsKey(id)) {
+                return id;
+            }
+        }
+        return -1;
     }
 
     // 按照用户 ID 从社交网络中删除用户
