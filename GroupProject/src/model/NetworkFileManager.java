@@ -7,64 +7,99 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-// 这个类的作用是管理文件的读写，提供一些方法来保存和读取用户数据、好友关系等信息
-// 文本大体格式如下：
-//
-//      NETWORK_ID
-//      保存当前社交网络 ID
-//
-//      CURRENT_USER
-//      保存当前用户 userId
-//
-//      USERS
-//      userId|username|password|homeTown|workPlace
-//
-//      FRIENDSHIPS
-//      userId1|userId2
-
+/**
+ * Loads and saves social network data in text files.
+ *
+ * <p>The text file format is divided into four sections:
+ * NETWORK_ID, CURRENT_USER, USERS, and FRIENDSHIPS.</p>
+ */
 public class NetworkFileManager {
-    // 保存文件的路径，我们一般选择相对路径
+
+    /** The file path currently used by this file manager. */
     private String filePath;
 
-    // 一些保存文本的格式，保存必须去遵循的一些规则
+    /** The project folder name used when the program runs from the workspace root. */
     private static final String PROJECT_FOLDER = "GroupProject";
+
+    /** The folder used to store network text files. */
     private static final String DATA_FOLDER = "data";
+
+    /** The prefix used by every network data file. */
     private static final String NETWORK_FILE_PREFIX = "network-";
+
+    /** The file extension used by every network data file. */
     private static final String FILE_EXTENSION = ".txt";
+
+    /** The default file path used before a network ID is selected. */
     private static final String DEFAULT_FILE_PATH = buildNetworkFilePath("0");
+
+    /** The section name used for the network ID. */
     private static final String NETWORK_ID_SECTION = "NETWORK_ID";
+
+    /** The section name used for the current user ID. */
     private static final String CURRENT_USER_SECTION = "CURRENT_USER";
+
+    /** The section name used for user records. */
     private static final String USERS_SECTION = "USERS";
+
+    /** The section name used for friendship records. */
     private static final String FRIENDSHIPS_SECTION = "FRIENDSHIPS";
+
+    /** The separator used when writing fields to the text file. */
     private static final String WRITE_SEPARATOR = "|";
+
+    /** The separator used when reading fields from the text file. */
     private static final String READ_SEPARATOR = "\\|";
 
-    // 使用默认文件路径创建文件管理器
+    /**
+     * Creates a file manager with the default file path.
+     */
     public NetworkFileManager() {
         filePath = DEFAULT_FILE_PATH;
     }
 
-    // 使用指定文件路径创建文件管理器
+    /**
+     * Creates a file manager with a specified file path.
+     *
+     * @param filePath the path to use
+     */
     public NetworkFileManager(String filePath) {
         this.filePath = filePath;
     }
 
-    // 获取当前文件管理器正在使用的文件路径
+    /**
+     * Gets the current file path.
+     *
+     * @return the current file path
+     */
     public String getFilePath() {
         return filePath;
     }
 
-    // 修改当前文件管理器正在使用的文件路径
+    /**
+     * Sets the current file path.
+     *
+     * @param filePath the new file path
+     */
     public void setFilePath(String filePath) {
         this.filePath = filePath;
     }
 
-    // 根据社交网络 ID 生成对应的文件路径
+    /**
+     * Builds a network file path from a network ID.
+     *
+     * @param networkId the network ID
+     * @return the path of the matching network file
+     */
     public static String buildNetworkFilePath(String networkId) {
         return getDataFolderPath() + File.separator + NETWORK_FILE_PREFIX + networkId + FILE_EXTENSION;
     }
 
-    // 获取真正用来保存社交网络文件的data文件夹路径
+    /**
+     * Gets the data folder path used by the current running environment.
+     *
+     * @return the data folder path
+     */
     private static String getDataFolderPath() {
         File projectDataFolder = new File(PROJECT_FOLDER + File.separator + DATA_FOLDER);
 
@@ -75,69 +110,63 @@ public class NetworkFileManager {
         return DATA_FOLDER;
     }
 
-    // 根据社交网络 ID 读取对应的社交网络文件
+    /**
+     * Loads a network by network ID.
+     *
+     * @param networkId the network ID
+     * @return the loaded network
+     */
     public Network loadNetwork(String networkId) {
         filePath = buildNetworkFilePath(networkId);
         return loadNetwork();
     }
 
-    // 从文件中读取社交网络
+    /**
+     * Loads a network from the current file path.
+     *
+     * @return the loaded network
+     */
     public Network loadNetwork() {
-        // 用来保存从文件中恢复出来的整个社交网络
         Network network = new Network();
 
-        // 用来暂时保存文件中记录的社交网络 ID
         String networkId = null;
 
-        // 用来暂时保存文件中记录的当前用户 ID
         int currentUserId = -1;
 
-        // 用来保存每一次从文件中读取到的一行文本
         String line = null;
 
-        // 用来记录当前读取到了文件中的哪一部分
         String currentSection = null;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            // 读取文件中的第一行
             line = reader.readLine();
 
-            // 确认第一部分是社交网络 ID 信息
             if (NETWORK_ID_SECTION.equals(line)) {
-                // 读取当前社交网络的 ID
                 networkId = reader.readLine();
                 network.setNetworkId(networkId);
             }
 
-            // 读取下一行，确认第二部分是当前用户信息
             line = reader.readLine();
             if (CURRENT_USER_SECTION.equals(line)) {
-                // 读取当前用户的 userId
                 currentUserId = Integer.parseInt(reader.readLine());
             }
 
-            // 继续一行一行读取文件，直到读完最后一行
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
 
-                // 如果读到空行，就跳过这一行
                 if (line.isEmpty()) {
                     continue;
                 }
 
-                // 如果读到 USERS，就说明接下来要读取用户信息
                 if (USERS_SECTION.equals(line)) {
                     currentSection = USERS_SECTION;
                     continue;
                 }
 
-                // 如果读到 FRIENDSHIPS，就说明接下来要读取好友关系
                 if (FRIENDSHIPS_SECTION.equals(line)) {
                     currentSection = FRIENDSHIPS_SECTION;
                     continue;
                 }
 
-                // 根据当前部分读取用户信息
                 if (USERS_SECTION.equals(currentSection)) {
                     String[] userInformation = line.split(READ_SEPARATOR);
 
@@ -151,7 +180,6 @@ public class NetworkFileManager {
                     network.addUser(user);
                 }
 
-                // 根据当前部分读取好友关系
                 if (FRIENDSHIPS_SECTION.equals(currentSection)) {
                     String[] friendshipInformation = line.split(READ_SEPARATOR);
 
@@ -162,7 +190,6 @@ public class NetworkFileManager {
                 }
             }
 
-            // 根据文件中保存的 userId 恢复当前用户
             if (currentUserId != -1) {
                 network.setCurrentUserById(currentUserId);
             }
@@ -173,24 +200,26 @@ public class NetworkFileManager {
         return network;
     }
 
-    // 把社交网络保存到文件中
+    /**
+     * Saves a network to the file path generated from its network ID.
+     *
+     * @param network the network to save
+     * @return true if saving succeeds, otherwise false
+     */
     public boolean saveNetwork(Network network) {
         filePath = buildNetworkFilePath(network.getNetworkId());
         createParentFolder();
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(filePath))) {
-            // 写入社交网络 ID 部分
             writer.println(NETWORK_ID_SECTION);
             writer.println(network.getNetworkId());
 
-            // 写入当前用户部分
             writer.println();
             writer.println(CURRENT_USER_SECTION);
             if (network.getCurrentUser() != null) {
                 writer.println(network.getCurrentUser().getUserId());
             }
 
-            // 写入用户信息部分
             writer.println();
             writer.println(USERS_SECTION);
             for (User user : network.getAllUsers()) {
@@ -201,12 +230,10 @@ public class NetworkFileManager {
                         + WRITE_SEPARATOR + user.getWorkPlace());
             }
 
-            // 写入好友关系部分
             writer.println();
             writer.println(FRIENDSHIPS_SECTION);
             for (User user : network.getAllUsers()) {
                 for (int friendId : user.getFriends()) {
-                    // 双向好友关系只保存一次，避免 0|1 和 1|0 同时出现
                     if (user.getUserId() < friendId) {
                         writer.println(user.getUserId() + WRITE_SEPARATOR + friendId);
                     }
@@ -220,14 +247,22 @@ public class NetworkFileManager {
         return true;
     }
 
-    // 根据社交网络 ID 把社交网络保存到对应的文件中
+    /**
+     * Saves a network with a specified network ID.
+     *
+     * @param network   the network to save
+     * @param networkId the network ID to use
+     * @return true if saving succeeds, otherwise false
+     */
     public boolean saveNetwork(Network network, String networkId) {
         network.setNetworkId(networkId);
         filePath = buildNetworkFilePath(networkId);
         return saveNetwork(network);
     }
 
-    // 如果保存路径中的文件夹不存在，就先创建文件夹
+    /**
+     * Creates the parent folder for the current file path if it does not exist.
+     */
     private void createParentFolder() {
         File file = new File(filePath);
         File parentFolder = file.getParentFile();

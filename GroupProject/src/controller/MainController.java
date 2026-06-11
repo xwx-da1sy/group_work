@@ -7,57 +7,101 @@ import model.User;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+/**
+ * Controls the main social network window after a user has logged in.
+ */
 public class MainController {
 
+    /** The social network currently shown in the main window. */
     private Network network;
+
+    /** The file manager used to save the current network. */
     private NetworkFileManager fileManager;
 
+    /**
+     * Creates a main controller for an already loaded network.
+     *
+     * @param network the network to manage
+     */
     public MainController(Network network) {
         this.network = network;
         fileManager = new NetworkFileManager();
     }
 
-    // 获取当前主控制器正在管理的社交网络
+    /**
+     * Gets the network managed by this controller.
+     *
+     * @return the current network
+     */
     public Network getNetwork() {
         return network;
     }
 
-    // 获取当前社交网络的ID
+    /**
+     * Gets the current network ID.
+     *
+     * @return the network ID
+     */
     public String getNetworkId() {
         return network.getNetworkId();
     }
 
-    // 获取当前用户的ID
+    /**
+     * Gets the current user's ID.
+     *
+     * @return the current user ID
+     */
     public int getCurrentUserId() {
         return network.getCurrentUser().getUserId();
     }
 
-    // 获取当前用户的用户名
+    /**
+     * Gets the current user's username.
+     *
+     * @return the current username
+     */
     public String getCurrentUsername() {
         return network.getCurrentUser().getUsername();
     }
 
-    // 获取当前用户的好友数量
+    /**
+     * Gets the number of friends owned by the current user.
+     *
+     * @return the current user's friend count
+     */
     public int getCurrentUserFriendsCount() {
         return network.getCurrentUserFriends().size();
     }
 
-    // 获取社交网络中的所有用户对象
+    /**
+     * Gets all users in the network as a sorted list.
+     *
+     * @return all users sorted by user ID
+     */
     public ArrayList<User> getAllUsersList() {
         ArrayList<User> users = new ArrayList<>(network.getAllUsers());
 
-        // 按照用户ID从小到大排序，这样界面显示比较稳定
         sortUsersById(users);
 
         return users;
     }
 
-    // 按照用户ID获取用户对象
+    /**
+     * Finds a user by user ID.
+     *
+     * @param userId the user ID to find
+     * @return the matching user, or null if no user exists
+     */
     public User getUserById(int userId) {
         return network.getUserById(userId);
     }
 
-    // 按照用户ID获取这个用户的所有好友对象
+    /**
+     * Gets one user's friends as a sorted list of User objects.
+     *
+     * @param userId the owner of the friend list
+     * @return the user's friends sorted by user ID
+     */
     public ArrayList<User> getUserFriendsList(int userId) {
         ArrayList<User> friendsList = new ArrayList<>();
 
@@ -74,13 +118,17 @@ public class MainController {
             }
         }
 
-        // 按照用户ID从小到大排序，这样界面显示比较稳定
         sortUsersById(friendsList);
 
         return friendsList;
     }
 
-    // 把目标用户添加为当前用户的好友
+    /**
+     * Adds the target user as a friend of the current user.
+     *
+     * @param targetUserId the target user's ID
+     * @return true if the friend relationship is created, otherwise false
+     */
     public boolean addFriendToCurrentUser(int targetUserId) {
         int currentUserId = network.getCurrentUser().getUserId();
 
@@ -100,7 +148,12 @@ public class MainController {
         return true;
     }
 
-    // 把目标用户从当前用户的好友列表中删除
+    /**
+     * Removes the target user from the current user's friend list.
+     *
+     * @param targetUserId the target user's ID
+     * @return true if the friend relationship is removed, otherwise false
+     */
     public boolean removeFriendFromCurrentUser(int targetUserId) {
         int currentUserId = network.getCurrentUser().getUserId();
 
@@ -120,7 +173,15 @@ public class MainController {
         return true;
     }
 
-    // 在当前社交网络中创建一个新的用户
+    /**
+     * Creates a new user in the current network.
+     *
+     * @param username  the new username
+     * @param password  the new password
+     * @param homeTown  the new user's hometown
+     * @param workPlace the new user's workplace
+     * @return the created user, or null if the input is invalid
+     */
     public User createNewUser(String username, String password, String homeTown, String workPlace) {
         if (username == null || password == null || homeTown == null || workPlace == null) {
             return null;
@@ -133,7 +194,12 @@ public class MainController {
         return network.createUser(username, password, homeTown, workPlace);
     }
 
-    // 从当前社交网络中删除一个用户
+    /**
+     * Removes a user from the current network.
+     *
+     * @param targetUserId the user ID to remove
+     * @return true if the user is removed, otherwise false
+     */
     public boolean removeUserFromNetwork(int targetUserId) {
         int currentUserId = network.getCurrentUser().getUserId();
 
@@ -148,12 +214,22 @@ public class MainController {
         return network.removeUser(targetUserId);
     }
 
-    // 保存当前社交网络
+    /**
+     * Saves the current network to its data file.
+     *
+     * @return true if the network is saved successfully, otherwise false
+     */
     public boolean saveCurrentNetwork() {
         return fileManager.saveNetwork(network);
     }
 
-    // 按照指定的信息类型筛选用户
+    /**
+     * Filters all users by ID, name, workplace, or hometown.
+     *
+     * @param keyword    the search keyword
+     * @param filterType the selected filter type
+     * @return the filtered users sorted by user ID
+     */
     public ArrayList<User> filterUsers(String keyword, String filterType) {
         ArrayList<User> filteredUsers = new ArrayList<>();
 
@@ -220,7 +296,13 @@ public class MainController {
         return filteredUsers;
     }
 
-    // 按照指定的信息类型筛选当前用户的好友
+    /**
+     * Filters the current user's friends by ID, name, workplace, or hometown.
+     *
+     * @param keyword    the search keyword
+     * @param filterType the selected filter type
+     * @return the filtered friends sorted by user ID
+     */
     public ArrayList<User> filterCurrentUserFriends(String keyword, String filterType) {
         ArrayList<User> filteredFriends = new ArrayList<>();
 
@@ -290,7 +372,12 @@ public class MainController {
         return filteredFriends;
     }
 
-    // 获取目标用户和当前用户的共同好友
+    /**
+     * Gets common friends between the current user and a target user.
+     *
+     * @param targetUserId the target user's ID
+     * @return common friends sorted by user ID
+     */
     public ArrayList<User> getCommonFriendsWithCurrentUser(int targetUserId) {
         ArrayList<User> commonFriends = new ArrayList<>();
 
@@ -321,13 +408,16 @@ public class MainController {
             }
         }
 
-        // 按照用户ID从小到大排序，这样界面显示比较稳定
         sortUsersById(commonFriends);
 
         return commonFriends;
     }
 
-    // 获取当前用户的好友推荐列表
+    /**
+     * Gets recommended friends for the current user from friends of friends.
+     *
+     * @return recommended friends sorted by user ID
+     */
     public ArrayList<User> getFriendRecommendationsForCurrentUser() {
         ArrayList<User> recommendedFriends = new ArrayList<>();
         HashSet<Integer> recommendedFriendIds = new HashSet<>();
@@ -335,17 +425,14 @@ public class MainController {
         HashSet<Integer> sameWorkPlaceFriends = network.filterFriendsOfFriendsBySameWorkPlace();
         HashSet<Integer> sameHomeTownFriends = network.filterFriendsOfFriendsBySameHomeTown();
 
-        // 把同工作地点的朋友的朋友加入推荐集合
         for (int userId : sameWorkPlaceFriends) {
             recommendedFriendIds.add(userId);
         }
 
-        // 把同家乡的朋友的朋友加入推荐集合
         for (int userId : sameHomeTownFriends) {
             recommendedFriendIds.add(userId);
         }
 
-        // 按照ID从哈希表中提取用户对象，方便UI展示
         for (int userId : recommendedFriendIds) {
             User recommendedFriend = network.getUserById(userId);
 
@@ -354,13 +441,16 @@ public class MainController {
             }
         }
 
-        // 按照用户ID从小到大排序，这样界面显示比较稳定
         sortUsersById(recommendedFriends);
 
         return recommendedFriends;
     }
 
-    // 获取社交网络中所有用户的展示信息
+    /**
+     * Gets display text for all users in the network.
+     *
+     * @return user information strings
+     */
     public ArrayList<String> getAllUserInformationList() {
         ArrayList<User> users = getAllUsersList();
         ArrayList<String> userInformationList = new ArrayList<>();
@@ -382,7 +472,11 @@ public class MainController {
         return userInformationList;
     }
 
-    // 按照用户ID从小到大排序
+    /**
+     * Sorts users by user ID in ascending order.
+     *
+     * @param users the users to sort
+     */
     private void sortUsersById(ArrayList<User> users) {
         for (int i = 0; i < users.size(); i++) {
             for (int j = i + 1; j < users.size(); j++) {

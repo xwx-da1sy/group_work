@@ -3,6 +3,9 @@ package Tester;
 import model.Network;
 import model.User;
 
+/**
+ * Runs temporary console tests for the User and Network model classes.
+ */
 public class TemporaryTester {
 
     private static int passed = 0;
@@ -40,8 +43,6 @@ public class TemporaryTester {
         }
     }
 
-    // --- helpers ---
-
     private static void check(String testName, boolean condition) {
         if (condition) {
             passed++;
@@ -50,8 +51,6 @@ public class TemporaryTester {
             System.out.println("  FAIL: " + testName);
         }
     }
-
-    // --- User tests ---
 
     private static void testUserCreationAndGetters() {
         System.out.println("[testUserCreationAndGetters]");
@@ -89,8 +88,6 @@ public class TemporaryTester {
         check("removeFriend", !u.getFriends().contains(4));
         check("removeFriend size 0", u.getFriends().isEmpty());
     }
-
-    // --- Network tests ---
 
     private static void testNetworkInit() {
         System.out.println("[testNetworkInit]");
