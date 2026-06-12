@@ -1,5 +1,185 @@
 # group_work
 
+## Project Overview
+
+This project is a Java Swing social network application built for the Data Structures group project. The program uses a local text file to save and load a complete social network. It does not use real network programming. Instead, the current user can be switched after loading the same social network file, which simulates different user perspectives inside one local program.
+
+### MVC Framework
+
+The program follows a simple MVC structure. The UI classes are responsible for windows, buttons, input fields, and dialogs. The controller classes connect the UI with the model. The model classes store users, friendships, network data, and file reading or saving logic.
+
+```mermaid
+flowchart TD
+    Main["ui.Main<br/>Program Entry"] --> LoginUI["ui.LoginUI<br/>Login And Registration UI"]
+
+    LoginUI --> BeginController["controller.BeginController<br/>Login And Registration Logic"]
+    BeginController --> NetworkFileManager["model.NetworkFileManager<br/>Load And Save Network Files"]
+    BeginController --> Network["model.Network<br/>Social Network Data And Logic"]
+
+    LoginUI --> MainController["controller.MainController<br/>Main Window Logic"]
+    MainController --> MainUI["ui.MainUI<br/>Main Social Network UI"]
+    MainController --> Network
+    MainController --> NetworkFileManager
+
+    Network --> UserMap["HashMap<Integer, User><br/>All Users"]
+    Network --> CurrentUser["currentUser<br/>Current User Perspective"]
+    UserMap --> User["model.User<br/>Single User Profile"]
+    User --> FriendSet["HashSet<Integer><br/>Friend User IDs"]
+```
+
+Main class responsibilities:
+
+- `User`: stores one user's username, password, hometown, workplace, user ID, and friend ID set.
+- `Network`: stores the whole social network, including all users, the current user, friendship operations, filtering, common friends, and friend recommendations.
+- `NetworkFileManager`: saves a `Network` object to a text file and loads it back from the `data` folder.
+- `BeginController`: handles registering a new network and logging in to an existing network.
+- `MainController`: provides the main UI with user lists, filtering results, friend operations, save operations, common friends, and friend recommendations.
+- `LoginUI`: shows the login window and the new-network registration window.
+- `MainUI`: shows the main social network interface after login.
+
+### Program Sequence
+
+The following sequence shows the main flow from starting the program to using and saving the social network.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant LoginUI
+    participant BeginController
+    participant NetworkFileManager
+    participant Network
+    participant MainController
+    participant MainUI
+
+    User->>LoginUI: Start program
+    LoginUI->>User: Show login and register options
+
+    alt Register new network
+        User->>LoginUI: Enter first user information
+        LoginUI->>BeginController: registerNewNetwork(...)
+        BeginController->>Network: Create Network and first User
+        BeginController->>NetworkFileManager: saveNetwork(network)
+        BeginController-->>LoginUI: Return created Network
+    else Login existing network
+        User->>LoginUI: Enter networkId, userId, password
+        LoginUI->>BeginController: handleLogin(...)
+        BeginController->>NetworkFileManager: loadNetwork(networkId)
+        NetworkFileManager-->>BeginController: Return loaded Network
+        BeginController->>Network: Check user ID and password
+        BeginController->>Network: Set current user
+        BeginController-->>LoginUI: Return loaded Network
+    end
+
+    LoginUI->>MainController: Create controller with Network
+    LoginUI->>MainUI: Open main window
+    MainUI->>MainController: Request current user, friends, all users
+    MainController->>Network: Read or update network data
+    Network-->>MainController: Return users and results
+    MainController-->>MainUI: Return display data
+    User->>MainUI: Add/remove user, add/remove friend, filter, view profile
+    MainUI->>MainController: Call matching business method
+    MainController->>Network: Update in-memory network
+    User->>MainUI: Click Save
+    MainUI->>MainController: saveCurrentNetwork()
+    MainController->>NetworkFileManager: saveNetwork(network)
+```
+
+### Data Structures Used
+
+The project uses different data structures for different jobs instead of forcing one structure to do everything.
+
+```java
+HashMap<Integer, User> userNetwork
+HashSet<Integer> friends
+ArrayList<User> displayList
+```
+
+`HashMap<Integer, User>` is used in `Network` to store all users. The key is `userId`, and the value is the matching `User` object. This supports fast lookup when the program needs to find one exact user by ID.
+
+`HashSet<Integer>` is used in `User` to store friend IDs. A set is suitable because the same friend should not be stored twice. It also makes it simple to check whether a user is already a friend.
+
+`ArrayList<User>` is used mainly by `MainController` and `MainUI` for display. The UI needs users in a stable order, so the controller converts model data into an `ArrayList` and sorts it by user ID before rendering buttons.
+
+The final division is:
+
+```text
+HashMap: model storage and fast user lookup
+HashSet: unique friend ID storage
+ArrayList: sorted UI display
+```
+
+### How To Use The Program
+
+Run the program from:
+
+```text
+GroupProject/src/ui/Main.java
+```
+
+The login window opens first. The user has two choices:
+
+1. Register a new social network.
+2. Load and log in to an existing social network.
+
+To register a new network, click:
+
+```text
+Register New Network
+```
+
+Then enter:
+
+```text
+Username
+Password
+Confirm Password
+Hometown
+Workplace
+```
+
+The program creates a new `Network`, creates the first user with `userId = 0`, automatically generates a readable `networkId`, saves the network file, and opens the main window.
+
+To log in to an existing network, enter:
+
+```text
+Network ID
+User ID
+Password
+```
+
+For example, if the saved file is:
+
+```text
+data/network-20260610-0.txt
+```
+
+then the network ID entered in the login window should be:
+
+```text
+20260610-0
+```
+
+After login, the main window is split into two parts:
+
+```text
+Left: Current User View
+Right: Network Manager
+```
+
+The left side shows the current user's profile, friends, friend filtering, and friend recommendations. The right side shows all users in the network and provides management functions such as add user, remove user, add friend, remove friend, search, save, and logout.
+
+The program does not automatically save every change. After changing users or friendships, click:
+
+```text
+Save
+```
+
+This writes the current network back to:
+
+```text
+data/network-ID.txt
+```
+
 ## 6.6
 
 We have built the basic framework of `User` and `Network`. The next step is to implement some real functions, starting with user registration and login.
